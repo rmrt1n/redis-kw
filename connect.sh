@@ -1,1 +1,1 @@
-nc localhost 6379
+clear;nc localhost 6379

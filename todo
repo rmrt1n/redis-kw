@@ -1,5 +1,5 @@
 - [ ] implement better instruction parser
-- [ ] fix del bug
+- [x] fix del bug
 - [ ] implement more instructions
 - [ ] make client program instead of using netcat
 - [ ] concurrency support

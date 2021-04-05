@@ -45,6 +45,13 @@ int main() {
     struct sockaddr_in serv_addr, client;
     HashTable *htable = htable_init(4096);
 
+    // htable_set(htable, "hi", "hello");
+    // HtableAction hi = htable_get(htable, "hi");
+    // if (hi.status == SUCCESS) puts(hi.value);
+    // htable_del(htable, "hi");
+    // HtableAction i = htable_get(htable, "hi");
+    // if (i.status == SUCCESS) puts(i.value);
+
     // start server
     sockfd = init_server(&serv_addr);
     // accept connection
@@ -136,16 +143,19 @@ HtableAction htable_set(HashTable *htable, char *key, char *value) {
         }
 
         if (tmp != NULL) {
+        puts("1");
             free(tmp->value);
             tmp->value = strdup(keyval->value);
             free(keyval->key);
             free(keyval->value);
             free(keyval);
         } else {
+        puts("2");
             keyval->next = NULL;
             (htable->entries[hash])->next = keyval;
         }
     } else {
+        puts("3");
         keyval->next = NULL;
         htable->entries[hash] = keyval;
     }
@@ -176,22 +186,34 @@ HtableAction htable_del(HashTable *htable, char *key) {
     HtableAction result;
     ulong hash = hash_func(key, htable->size);
 
-    Entry *tmp = htable->entries[hash], *tmp_prev;
-    while (tmp != NULL && strcmp(tmp->key, key) != 0) {
-        tmp_prev = tmp;
-        tmp = tmp->next;
-    }
-    
-    if (tmp == NULL) {
-        result = (HtableAction){.status = FAIL, .value = NULL};
+    if (htable->entries[hash] != NULL) {
+        Entry *tmp = htable->entries[hash], *tmp_prev = NULL;
+
+        if (tmp->next == NULL) {
+            free(tmp->key);
+            free(tmp->value);
+            free(tmp);
+            htable->entries[hash] = NULL;
+            result = (HtableAction){.status = SUCCESS, .value = NULL};
+        } else {
+            while (tmp != NULL && strcmp(tmp->key, key) != 0) {
+                tmp_prev = tmp;
+                tmp = tmp->next; 
+            }
+            if (tmp != NULL) {
+                tmp_prev->next = tmp->next;
+                free(tmp->key); 
+                free(tmp->value); 
+                free(tmp);
+                result = (HtableAction){.status = SUCCESS, .value = NULL};
+            } else {
+                result = (HtableAction){.status = FAIL, .value = NULL};
+            }
+        }
     } else {
-        tmp_prev->next = tmp->next;
-        free(tmp->key);
-        free(tmp->value);
-        free(tmp);
-        result = (HtableAction){.status = SUCCESS, .value = NULL};
+        result = (HtableAction){.status = FAIL, .value = NULL};
     }
-    
+
     return result;
 }
 
@@ -211,7 +233,7 @@ char *readline(int client_sock) {
 }
 
 void execute(int client_sock, HashTable *htable, char *msg) {
-    char *token = strdup(msg);
+    char *token;
     while (token = strtok_r(msg, " \n\t", &msg)) {
         if (strcmp(token, "set") == 0) {
             char *key = strtok_r(msg, " \n\t", &msg);
@@ -231,7 +253,7 @@ void execute(int client_sock, HashTable *htable, char *msg) {
             }
         } else if (strcmp(token, "del") == 0) {
             char *key = strtok_r(msg, " \n\t", &msg);
-            HtableAction instr = htable_get(htable, key); 
+            HtableAction instr = htable_del(htable, key); 
             print_status(client_sock, instr);
         } else if (strcmp(token, "quit") == 0) {
             exit(0);
