@@ -52,15 +52,18 @@ int accept_connection(int sockfd, struct sockaddr_in *client);
 
 // parser functions
 Lexer *lexer_init(char *msg);
+Command *command_init(int type, int argc, char **args);
 void lexer_advance(Lexer *lexer);
 char *get_next_token(Lexer *lexer);
-Command *command_init(int type, int argc, char **args);
+int get_argc(Lexer *lexer);
 Command *parse(char *msg);
 
 // command handler functions
 void exec_set(int client_sock, HashTable *htable, Command *cmd);
 void exec_get(int client_sock, HashTable *htable, Command *cmd);
 void exec_del(int client_sock, HashTable *htable, Command *cmd);
+void exec_exists(int client_sock, HashTable *htable, Command *cmd);
+void exec_ping(int client_sock, Command *cmd);
 void exec_unknown(int client_sock);
 
 // interpreter functions
