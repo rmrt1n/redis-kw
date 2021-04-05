@@ -1,7 +1,9 @@
-- [ ] implement better instruction parser
+- [x] implement better instruction parser
 - [x] fix del bug
 - [ ] implement more instructions
 - [ ] make client program instead of using netcat
 - [ ] concurrency support
 - [ ] add more datatypes?
 - [ ] persistence?
+- [ ] organize project structure
+- [ ] 

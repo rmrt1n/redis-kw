@@ -22,35 +22,60 @@ typedef struct HashTable {
 } HashTable;
 
 typedef struct HtableAction {
-    enum {SUCCESS, FAIL} status;
+    enum {SUCCESS, NIL} status;
     char *value;
 } HtableAction;
 
+typedef struct Command {
+    enum {SET, GET, DEL, PING, EXISTS, INCR, DECR, UNKNOWN, NOOP} type;
+    int argc;
+    char **args;
+} Command;
+
+typedef struct Lexer {
+    char *string;
+    int pos;
+    char current_char;
+} Lexer;
+
+// hash table functions
 ulong hash_func(char *str, int size);
 HashTable *htable_init(int size);
 HtableAction htable_set(HashTable *htable, char *key, char *value);
 HtableAction htable_get(HashTable *htable, char *key);
 HtableAction htable_del(HashTable *htable, char *key);
+HtableAction htable_exists(HashTable *htable, char *key);
 
+// server functions
 int init_server(struct sockaddr_in *serv_addr);
 int accept_connection(int sockfd, struct sockaddr_in *client);
 
+// parser functions
+Lexer *lexer_init(char *msg);
+void lexer_advance(Lexer *lexer);
+char *get_next_token(Lexer *lexer);
+Command *command_init(int type, int argc, char **args);
+Command *parse(char *msg);
+
+// command handler functions
+void exec_set(int client_sock, HashTable *htable, Command *cmd);
+void exec_get(int client_sock, HashTable *htable, Command *cmd);
+void exec_del(int client_sock, HashTable *htable, Command *cmd);
+void exec_unknown(int client_sock);
+
+// interpreter functions
 void print_status(int client_sock, HtableAction action);
 char *readline(int client_sock);
 void execute(int client_sock, HashTable *htable, char *msg);
 void repl(int client_sock, HashTable *htable);
 
+// helper functions
+int ndigits(int x);
+
 int main() {
     int sockfd;
     struct sockaddr_in serv_addr, client;
     HashTable *htable = htable_init(4096);
-
-    // htable_set(htable, "hi", "hello");
-    // HtableAction hi = htable_get(htable, "hi");
-    // if (hi.status == SUCCESS) puts(hi.value);
-    // htable_del(htable, "hi");
-    // HtableAction i = htable_get(htable, "hi");
-    // if (i.status == SUCCESS) puts(i.value);
 
     // start server
     sockfd = init_server(&serv_addr);
@@ -143,19 +168,16 @@ HtableAction htable_set(HashTable *htable, char *key, char *value) {
         }
 
         if (tmp != NULL) {
-        puts("1");
             free(tmp->value);
             tmp->value = strdup(keyval->value);
             free(keyval->key);
             free(keyval->value);
             free(keyval);
         } else {
-        puts("2");
             keyval->next = NULL;
             (htable->entries[hash])->next = keyval;
         }
     } else {
-        puts("3");
         keyval->next = NULL;
         htable->entries[hash] = keyval;
     }
@@ -172,7 +194,7 @@ HtableAction htable_get(HashTable *htable, char *key) {
     while (tmp != NULL && strcmp(tmp->key, key) != 0) tmp = tmp->next;
 
     if (tmp == NULL) {
-        result = (HtableAction){.status = FAIL, .value = NULL};
+        result = (HtableAction){.status = NIL, .value = NULL};
     } else {
         result.status = SUCCESS;
         result.value = malloc(strlen(tmp->value) + 1);
@@ -207,11 +229,27 @@ HtableAction htable_del(HashTable *htable, char *key) {
                 free(tmp);
                 result = (HtableAction){.status = SUCCESS, .value = NULL};
             } else {
-                result = (HtableAction){.status = FAIL, .value = NULL};
+                result = (HtableAction){.status = NIL, .value = NULL};
             }
         }
     } else {
-        result = (HtableAction){.status = FAIL, .value = NULL};
+        result = (HtableAction){.status = NIL, .value = NULL};
+    }
+
+    return result;
+}
+
+HtableAction htable_exists(HashTable *htable, char *key) {
+    HtableAction result; 
+    ulong hash = hash_func(key, htable->size);
+
+    Entry *tmp = htable->entries[hash];
+    while (tmp != NULL && strcmp(tmp->key, key) != 0) tmp = tmp->next;
+
+    if (tmp != NULL) {
+        result = (HtableAction){.status = SUCCESS, .value = NULL};
+    } else {
+        result = (HtableAction){.status = NIL, .value = NULL};
     }
 
     return result;
@@ -221,7 +259,7 @@ void print_status(int client_sock, HtableAction action) {
     if (action.status == SUCCESS) {
         write(client_sock, "OK\n", 4);
     } else {
-        write(client_sock, "ERR\n", 5);
+        write(client_sock, "NIL\n", 5);
     }
 }
 
@@ -232,38 +270,222 @@ char *readline(int client_sock) {
     return msg;
 }
 
-void execute(int client_sock, HashTable *htable, char *msg) {
-    char *token;
-    while (token = strtok_r(msg, " \n\t", &msg)) {
-        if (strcmp(token, "set") == 0) {
-            char *key = strtok_r(msg, " \n\t", &msg);
-            char *value = strtok_r(msg, " \n\t", &msg);
-            HtableAction instr = htable_set(htable, key, value); 
-            print_status(client_sock, instr);
-        } else if (strcmp(token, "get") == 0) {
-            char *key = strtok_r(msg, " \n\t", &msg);
-            HtableAction instr = htable_get(htable, key); 
-            if (instr.status == SUCCESS) {
-                char *temp = malloc(strlen(instr.value) + 1);
-                sprintf(temp, "\"%s\"\n", instr.value);
-                write(client_sock, temp, strlen(temp) + 1);
-                free(temp);
-            } else {
-                print_status(client_sock, instr);
-            }
-        } else if (strcmp(token, "del") == 0) {
-            char *key = strtok_r(msg, " \n\t", &msg);
-            HtableAction instr = htable_del(htable, key); 
-            print_status(client_sock, instr);
-        } else if (strcmp(token, "quit") == 0) {
-            exit(0);
-        } else {
-            char *invalid_msg = malloc(24);
-            sprintf(invalid_msg, "unknown command %s\n", token);
-            write(client_sock, invalid_msg, strlen(invalid_msg) + 1);
-            break;
-        }
+Command *command_init(int type, int argc, char **args) {
+    Command *cmd = malloc(sizeof(Command));
+    cmd->type = type;
+    cmd->argc = argc;
+    cmd->args = args;
+    return cmd;
+}
+
+Lexer *lexer_init(char *msg) {
+    Lexer *lexer = malloc(sizeof(lexer));
+    lexer->string = msg;
+    lexer->pos = 0;
+    lexer->current_char = msg[0];
+    return lexer;
+}
+
+void lexer_advance(Lexer *lexer) {
+    if (lexer->pos < strlen(lexer->string)) {
+        lexer->pos++;
+        lexer->current_char = lexer->string[lexer->pos];
     }
+}
+
+char *get_next_token(Lexer *lexer) {
+    char *token = calloc(1, 1);
+    if (lexer->pos < strlen(lexer->string)) {
+        if (isspace(lexer->current_char)) {
+            while (isspace(lexer->current_char)) lexer_advance(lexer);
+        }
+
+        // handle if whitespace skips until terminating null byte
+        if (lexer->current_char == '\0') return NULL;
+
+        if (lexer->current_char == '"') {
+            lexer_advance(lexer);
+            while (lexer->current_char != '"' && lexer->pos < strlen(lexer->string)) {
+                    char *temp = calloc(2, 1);
+                    temp[0] = lexer->current_char;
+
+                    token = realloc(token, strlen(token) + 2);
+                    strcat(token, temp);
+
+                    free(temp);
+                    lexer_advance(lexer);
+            }
+            lexer_advance(lexer);
+            return token;
+        }
+
+        if (isspace(lexer->current_char) == 0) {
+            while (isspace(lexer->current_char) == 0 && lexer->pos < strlen(lexer->string)) {
+                char *temp = calloc(2, 1);
+                temp[0] = lexer->current_char;
+
+                token = realloc(token, strlen(token) + 2);
+                strcat(token, temp);
+
+                free(temp);
+                lexer_advance(lexer);
+            }
+            return token;
+        }
+    } 
+
+    return NULL;
+}
+
+int get_argc(Lexer *lexer) {
+    Lexer *dup = lexer_init(lexer->string); 
+    int argc = 0;
+    while (get_next_token(dup) != NULL) argc++;
+    free(dup);
+    return argc - 1; // -1 for command
+}
+
+Command *parse(char *msg) {
+    Lexer *lexer = lexer_init(msg);
+    char *token = get_next_token(lexer);
+    int argc = get_argc(lexer);
+    Command *cmd;
+    if (argc >= 0) {
+        int type;
+        if (strcmp(token, "set") == 0) {
+            type = SET; 
+        } else if (strcmp(token, "get") == 0) {
+            type = GET; 
+        } else if (strcmp(token, "del") == 0) {
+            type = DEL; 
+        } else if (strcmp(token, "ping") == 0) {
+            type = PING;
+        } else if (strcmp(token, "exists") == 0) {
+            type = EXISTS;
+        } else {
+            type = UNKNOWN; 
+        }
+
+        // parse arguments
+        char **args = malloc(argc * sizeof(char *));
+        for (int i = 0; i < argc; i++) {
+            token = get_next_token(lexer);
+            args[i] = malloc(strlen(token) + 1);
+            strcpy(args[i], token);
+        }
+
+        cmd = command_init(type, argc, args);
+    } else {
+        cmd = command_init(NOOP, 0, NULL);
+    }
+
+    free(lexer);
+    free(token);
+    return cmd;
+}
+
+void exec_set(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 0) {
+        write(client_sock, "OK\n", 4);
+    } else if (cmd->argc == 1) {
+        HtableAction instr = htable_set(htable, cmd->args[0], ""); 
+        print_status(client_sock, instr);
+    } else if (cmd->argc == 2) {
+        HtableAction instr = htable_set(htable, cmd->args[0], cmd->args[1]); 
+        print_status(client_sock, instr);
+    } else {
+        write(client_sock, "ERR syntax error\n", 18);
+    }
+}
+
+void exec_get(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction instr = htable_get(htable, cmd->args[0]); 
+        if (instr.status == SUCCESS) {
+            char *tmp = malloc(strlen(instr.value) + 1);
+            sprintf(tmp, "\"%s\"\n", instr.value);
+            write(client_sock, tmp, strlen(tmp) + 1);
+            free(tmp);
+        } else {
+            print_status(client_sock, instr);
+        }
+    } else {
+        char tmp[55];
+        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 1)\n", cmd->argc);
+        write(client_sock, tmp, strlen(tmp) + 1);
+    }
+}
+
+int ndigits(int x) {
+    int res = 0;
+    while (x > 0) {
+        x /= 10;
+        res++;
+    }
+    return res;
+}
+
+void exec_del(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 0) {
+        write(client_sock, "ERR wrong number of arguments for \'del\'\n", 40);
+    } else {
+        int success = 0;
+        for (int i = 0; i < cmd->argc; i++) {
+            HtableAction instr = htable_del(htable, cmd->args[i]); 
+            if (instr.status == SUCCESS) success++;
+        }
+        char *tmp = malloc(ndigits(success) + 2);
+        sprintf(tmp, "%d\n", success);
+        write(client_sock, tmp, strlen(tmp) + 1);
+    }
+}
+
+void exec_ping(int client_sock, Command *cmd) {
+    if (cmd->argc == 0) {
+        write(client_sock, "PONG\n", 6);
+    } else if (cmd->argc == 1) {
+        char *tmp = malloc(strlen(cmd->args[0]) + 1);
+        sprintf(tmp, "\"%s\"\n", cmd->args[0]);
+        write(client_sock, tmp, strlen(tmp) + 1);
+        free(tmp);
+    } else {
+        char tmp[58];
+        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 0..1)\n", cmd->argc);
+        write(client_sock, tmp, strlen(tmp) + 1);
+    }
+}
+
+void exec_exists(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 0) {
+        write(client_sock, "ERR wrong number of arguments for \'exists\'\n", 43);
+    } else {
+        int success = 0;
+        for (int i = 0; i < cmd->argc; i++) {
+            HtableAction instr = htable_exists(htable, cmd->args[i]);
+            if (instr.status == SUCCESS) success++;
+        }
+        char *tmp = malloc(ndigits(success) + 2);
+        sprintf(tmp, "%d\n", success);
+        write(client_sock, tmp, strlen(tmp) + 1);
+    }
+}
+
+void exec_unknown(int client_sock) {
+    write(client_sock, "ERR unrecognized command\n", 25);
+}
+
+void execute(int client_sock, HashTable *htable, char *msg) {
+    Command *cmd = parse(msg);
+    switch (cmd->type) {
+        case SET: exec_set(client_sock, htable, cmd); break;
+        case GET: exec_get(client_sock, htable, cmd); break;
+        case DEL: exec_del(client_sock, htable, cmd); break;
+        case EXISTS: exec_exists(client_sock, htable, cmd); break;
+        case PING: exec_ping(client_sock, cmd); break;
+        case UNKNOWN: exec_unknown(client_sock); break;
+    }
+    free(cmd->args);
+    free(cmd);
 }
 
 void repl(int client_sock, HashTable *htable) {
@@ -277,3 +499,4 @@ void repl(int client_sock, HashTable *htable) {
         free(msg);
     }
 }
+
