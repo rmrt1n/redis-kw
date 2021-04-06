@@ -28,8 +28,9 @@ typedef struct HtableAction {
 
 typedef struct Command {
     enum {
-        DEL, PING, EXISTS, INCR, DECR, UNKNOWN, NOOP,
-        SET, GET, GETRANGE, GETSET
+        DEL, PING, EXISTS,
+        SET, GET, GETRANGE, GETSET, MGET, STRLEN, INCR, DECR,
+        QUIT, UNKNOWN, NOOP
     } type;
     int argc;
     char **args;
@@ -65,6 +66,11 @@ Command *parse(char *msg);
 void exec_set(int client_sock, HashTable *htable, Command *cmd);
 void exec_get(int client_sock, HashTable *htable, Command *cmd);
 void exec_getrange(int client_sock, HashTable *htable, Command *cmd);
+void exec_getset(int client_sock, HashTable *htable, Command *cmd);
+void exec_mget(int client_sock, HashTable *htable, Command *cmd);
+void exec_strlen(int client_sock, HashTable *htable, Command *cmd);
+void exec_incr(int client_sock, HashTable *htable, Command *cmd);
+void exec_decr(int client_sock, HashTable *htable, Command *cmd);
 void exec_del(int client_sock, HashTable *htable, Command *cmd);
 void exec_exists(int client_sock, HashTable *htable, Command *cmd);
 void exec_ping(int client_sock, Command *cmd);
@@ -270,7 +276,7 @@ void print_status(int client_sock, HtableAction action) {
     if (action.status == SUCCESS) {
         writeline(client_sock, "OK");
     } else {
-        writeline(client_sock, "NIL");
+        writeline(client_sock, "(nil)");
     }
 }
 
@@ -279,6 +285,66 @@ char *readline(int client_sock) {
     read(client_sock, msg, 1024);
     msg[strlen(msg) - 1] = '\0';
     return msg;
+}
+
+int isnumber(char *str) {
+    int i = *str == '-' ? 1 : 0;
+    for (i; i < strlen(str); i++) {
+        if (isdigit(str[i]) == 0) return 0;
+    }
+    return 1;
+}
+
+int strtoi(char *str) {
+    int res = 0, i = *str == '-' ? 1 : 0;
+    int neg = i;
+    for (i; i < strlen(str); i++) {
+        res = res * 10 + (str[i] - '0');
+    }
+    if (neg) res *= -1;
+    return res;
+}
+
+char *substr(char *str, int start, int end) {
+    int n = strlen(str);
+    if (start > end) {
+        return "\"\"";
+    } else {
+        char *res = malloc(end - start + 1);
+        snprintf(res, end - start + 2, "%s", str+start);
+        return res;
+    }
+}
+
+void writeline(int client_sock, char *msg) {
+    char *tmp = malloc(strlen(msg) + 2);
+    sprintf(tmp, "%s\n", msg);
+    write(client_sock, tmp, strlen(tmp) + 1);
+    free(tmp);
+}
+
+char *quote_encase(char *str) {
+    char *tmp = malloc(strlen(str) + 3);
+    sprintf(tmp, "\"%s\"", str);
+    return tmp;
+}
+
+void print_wrong_argc(int client_sock, int given, int expected) {
+    char *tmp = malloc(50 + ndigits(given) + ndigits(expected));
+    sprintf(tmp, "ERR wrong number of arguments (given %d, expected %d)",
+            given, expected);
+    writeline(client_sock, tmp);
+    free(tmp);
+}
+
+int ndigits(int x) {
+    int n = x < 0 ? x * -1 : x;
+    int res = 0;
+    while (n > 0) {
+        n /= 10;
+        res++;
+    }
+    return res;
 }
 
 Command *command_init(int type, int argc, char **args) {
@@ -367,14 +433,26 @@ Command *parse(char *msg) {
             type = SET; 
         } else if (strcmp(token, "get") == 0) {
             type = GET; 
-        } else if (strcmp(token, "del") == 0) {
-            type = DEL; 
         } else if (strcmp(token, "getrange") == 0) {
             type = GETRANGE; 
+        } else if (strcmp(token, "getset") == 0) {
+            type = GETSET; 
+        } else if (strcmp(token, "mget") == 0) {
+            type = MGET; 
+        } else if (strcmp(token, "strlen") == 0) {
+            type = STRLEN; 
+        } else if (strcmp(token, "incr") == 0) {
+            type = INCR; 
+        } else if (strcmp(token, "decr") == 0) {
+            type = DECR; 
+        } else if (strcmp(token, "del") == 0) {
+            type = DEL; 
         } else if (strcmp(token, "ping") == 0) {
             type = PING;
         } else if (strcmp(token, "exists") == 0) {
             type = EXISTS;
+        } else if (strcmp(token, "quit") == 0) {
+            type = QUIT;
         } else {
             type = UNKNOWN; 
         }
@@ -424,45 +502,112 @@ void exec_get(int client_sock, HashTable *htable, Command *cmd) {
         }
     } else {
         char tmp[55];
-        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 1)\n", cmd->argc);
+        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 1)", cmd->argc);
         writeline(client_sock, tmp);
     }
 }
 
-int isnumber(char *str) {
-    int i = *str == '-' ? 1 : 0;
-    for (i; i < strlen(str); i++) {
-        if (isdigit(str[i]) == 0) return 0;
-    }
-    return 1;
-}
-
-int strtoi(char *str) {
-    int res = 0, i = *str == '-' ? 1 : 0;
-    int neg = i;
-    for (i; i < strlen(str); i++) {
-        res = res * 10 + (str[i] - '0');
-    }
-    if (neg) res *= -1;
-    return res;
-}
-
-char *substr(char *str, int start, int end) {
-    int n = strlen(str);
-    if (start > end) {
-        return "\"\"";
+void exec_getset(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 2) {
+        HtableAction get_instr = htable_get(htable, cmd->args[0]);
+        if (get_instr.status == SUCCESS) {
+            char *tmp = malloc(strlen(get_instr.value) + 2);
+            sprintf(tmp, "\"%s\"", get_instr.value);
+            writeline(client_sock, tmp);
+            free(tmp);
+        }
+        HtableAction set_instr = htable_set(htable, cmd->args[0], cmd->args[1]);
     } else {
-        char *res = malloc(end - start + 1);
-        snprintf(res, end - start + 2, "%s", str+start);
-        return res;
+        char tmp[55];
+        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 2)", cmd->argc);
+        writeline(client_sock, tmp);
     }
 }
 
-void writeline(int client_sock, char *msg) {
-    char *tmp = malloc(strlen(msg) + 2);
-    sprintf(tmp, "%s\n", msg);
-    write(client_sock, tmp, strlen(tmp) + 1);
-    free(tmp);
+void exec_mget(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 0) {
+        writeline(client_sock, "ERR wrong number of arguments for 'mget'");
+    } else {
+        for (int i = 0; i < cmd->argc; i++) {
+            HtableAction instr = htable_get(htable, cmd->args[i]);
+            if (instr.status == SUCCESS) {
+                // + 5 = '\0' + "" + ) + ' '
+                char *tmp = malloc(strlen(instr.value) + ndigits(i + 1) + 5);
+                char *quoted_val = quote_encase(instr.value);
+                sprintf(tmp, "%d) %s", i + 1, quoted_val);
+                writeline(client_sock, tmp);
+                free(tmp);
+                free(quoted_val);
+            } else {
+                // + 8 = '\0' + ") (nil)"
+                char *tmp = malloc(ndigits(i + 1) + 8);
+                sprintf(tmp, "%d) (nil)", i + 1);
+                writeline(client_sock, tmp);
+                free(tmp);
+            }
+        }
+    }
+}
+
+void exec_strlen(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction instr = htable_get(htable, cmd->args[0]);
+        if (instr.status == SUCCESS) {
+            int n = strlen(instr.value);
+            char *tmp = malloc(n + 1);
+            sprintf(tmp, "%d", n);
+            writeline(client_sock, tmp);
+            free(tmp);
+        } else {
+            writeline(client_sock, "0");
+        }
+    } else {
+        print_wrong_argc(client_sock, cmd->argc, 1);
+    }
+}
+
+void exec_incr(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction instr = htable_get(htable, cmd->args[0]);
+        if (instr.status == SUCCESS) {
+            if (isnumber(instr.value)) {
+                int n = strtoi(instr.value) + 1;
+                char *val = malloc(ndigits(n) + 2);
+                sprintf(val, "%d", n);
+                HtableAction set_instr = htable_set(htable, cmd->args[0], val);
+                print_status(client_sock, set_instr);
+            } else {
+                writeline(client_sock, "ERR value is not an integer or out of range");
+            }
+        } else {
+            HtableAction instr = htable_set(htable, cmd->args[0], "1");
+            print_status(client_sock, instr);
+        }
+    } else {
+        print_wrong_argc(client_sock, cmd->argc, 1);
+    }
+}
+
+void exec_decr(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction instr = htable_get(htable, cmd->args[0]);
+        if (instr.status == SUCCESS) {
+            if (isnumber(instr.value)) {
+                int n = strtoi(instr.value) - 1;
+                char *val = malloc(ndigits(n) + 2);
+                sprintf(val, "%d", n);
+                HtableAction set_instr = htable_set(htable, cmd->args[0], val);
+                print_status(client_sock, set_instr);
+            } else {
+                writeline(client_sock, "ERR value is not an integer or out of range");
+            }
+        } else {
+            HtableAction instr = htable_set(htable, cmd->args[0], "-1");
+            print_status(client_sock, instr);
+        }
+    } else {
+        print_wrong_argc(client_sock, cmd->argc, 1);
+    }
 }
 
 void exec_getrange(int client_sock, HashTable *htable, Command *cmd) {
@@ -490,15 +635,6 @@ void exec_getrange(int client_sock, HashTable *htable, Command *cmd) {
         sprintf(tmp, "ERR wrong number of arguments (given %d, expected 3)\n", cmd->argc);
         writeline(client_sock, tmp);
     }
-}
-
-int ndigits(int x) {
-    int res = 0;
-    while (x > 0) {
-        x /= 10;
-        res++;
-    }
-    return res;
 }
 
 void exec_del(int client_sock, HashTable *htable, Command *cmd) {
@@ -557,11 +693,17 @@ void execute(int client_sock, HashTable *htable, char *msg) {
     switch (cmd->type) {
         case SET: exec_set(client_sock, htable, cmd); break;
         case GET: exec_get(client_sock, htable, cmd); break;
-        case DEL: exec_del(client_sock, htable, cmd); break;
         case GETRANGE: exec_getrange(client_sock, htable, cmd); break;
+        case GETSET: exec_getset(client_sock, htable, cmd); break;
+        case MGET: exec_mget(client_sock, htable, cmd); break;
+        case STRLEN: exec_strlen(client_sock, htable, cmd); break;
+        case INCR: exec_incr(client_sock, htable, cmd); break;
+        case DECR: exec_decr(client_sock, htable, cmd); break;
+        case DEL: exec_del(client_sock, htable, cmd); break;
         case EXISTS: exec_exists(client_sock, htable, cmd); break;
         case PING: exec_ping(client_sock, cmd); break;
         case UNKNOWN: exec_unknown(client_sock); break;
+        case QUIT: exit(0); break;
     }
     free(cmd->args);
     free(cmd);
