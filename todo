@@ -1,6 +1,7 @@
 - [x] implement better instruction parser
 - [x] fix del bug
-- [ ] implement more instructions
+- [x] implement more instructions
+- [ ] implement hash datatype
 - [ ] make client program instead of using netcat
 - [ ] concurrency support
 - [ ] add more datatypes?
