@@ -27,7 +27,10 @@ typedef struct HtableAction {
 } HtableAction;
 
 typedef struct Command {
-    enum {SET, GET, DEL, PING, EXISTS, INCR, DECR, UNKNOWN, NOOP} type;
+    enum {
+        DEL, PING, EXISTS, INCR, DECR, UNKNOWN, NOOP,
+        SET, GET, GETRANGE, GETSET
+    } type;
     int argc;
     char **args;
 } Command;
@@ -61,6 +64,7 @@ Command *parse(char *msg);
 // command handler functions
 void exec_set(int client_sock, HashTable *htable, Command *cmd);
 void exec_get(int client_sock, HashTable *htable, Command *cmd);
+void exec_getrange(int client_sock, HashTable *htable, Command *cmd);
 void exec_del(int client_sock, HashTable *htable, Command *cmd);
 void exec_exists(int client_sock, HashTable *htable, Command *cmd);
 void exec_ping(int client_sock, Command *cmd);
@@ -69,11 +73,15 @@ void exec_unknown(int client_sock);
 // interpreter functions
 void print_status(int client_sock, HtableAction action);
 char *readline(int client_sock);
+void writeline(int client_sock, char *msg);
 void execute(int client_sock, HashTable *htable, char *msg);
 void repl(int client_sock, HashTable *htable);
 
 // helper functions
 int ndigits(int x);
+int isnumber(char *str);
+int strtoi(char *str);
+char *substr(char *str, int start, int end);
 
 int main() {
     int sockfd;
@@ -130,7 +138,7 @@ int accept_connection(int sockfd, struct sockaddr_in *client) {
         exit(1);
     }
 
-    write(client_sock, "connected\n", 11);
+    writeline(client_sock, "connected");
     return client_sock;
 } 
 
@@ -260,9 +268,9 @@ HtableAction htable_exists(HashTable *htable, char *key) {
 
 void print_status(int client_sock, HtableAction action) {
     if (action.status == SUCCESS) {
-        write(client_sock, "OK\n", 4);
+        writeline(client_sock, "OK");
     } else {
-        write(client_sock, "NIL\n", 5);
+        writeline(client_sock, "NIL");
     }
 }
 
@@ -361,6 +369,8 @@ Command *parse(char *msg) {
             type = GET; 
         } else if (strcmp(token, "del") == 0) {
             type = DEL; 
+        } else if (strcmp(token, "getrange") == 0) {
+            type = GETRANGE; 
         } else if (strcmp(token, "ping") == 0) {
             type = PING;
         } else if (strcmp(token, "exists") == 0) {
@@ -389,7 +399,7 @@ Command *parse(char *msg) {
 
 void exec_set(int client_sock, HashTable *htable, Command *cmd) {
     if (cmd->argc == 0) {
-        write(client_sock, "OK\n", 4);
+        writeline(client_sock, "OK");
     } else if (cmd->argc == 1) {
         HtableAction instr = htable_set(htable, cmd->args[0], ""); 
         print_status(client_sock, instr);
@@ -397,7 +407,7 @@ void exec_set(int client_sock, HashTable *htable, Command *cmd) {
         HtableAction instr = htable_set(htable, cmd->args[0], cmd->args[1]); 
         print_status(client_sock, instr);
     } else {
-        write(client_sock, "ERR syntax error\n", 18);
+        writeline(client_sock, "ERR syntax error");
     }
 }
 
@@ -405,9 +415,9 @@ void exec_get(int client_sock, HashTable *htable, Command *cmd) {
     if (cmd->argc == 1) {
         HtableAction instr = htable_get(htable, cmd->args[0]); 
         if (instr.status == SUCCESS) {
-            char *tmp = malloc(strlen(instr.value) + 1);
-            sprintf(tmp, "\"%s\"\n", instr.value);
-            write(client_sock, tmp, strlen(tmp) + 1);
+            char *tmp = malloc(strlen(instr.value) + 2);
+            sprintf(tmp, "\"%s\"", instr.value);
+            writeline(client_sock, tmp);
             free(tmp);
         } else {
             print_status(client_sock, instr);
@@ -415,7 +425,70 @@ void exec_get(int client_sock, HashTable *htable, Command *cmd) {
     } else {
         char tmp[55];
         sprintf(tmp, "ERR wrong number of arguments (given %d, expected 1)\n", cmd->argc);
-        write(client_sock, tmp, strlen(tmp) + 1);
+        writeline(client_sock, tmp);
+    }
+}
+
+int isnumber(char *str) {
+    int i = *str == '-' ? 1 : 0;
+    for (i; i < strlen(str); i++) {
+        if (isdigit(str[i]) == 0) return 0;
+    }
+    return 1;
+}
+
+int strtoi(char *str) {
+    int res = 0, i = *str == '-' ? 1 : 0;
+    int neg = i;
+    for (i; i < strlen(str); i++) {
+        res = res * 10 + (str[i] - '0');
+    }
+    if (neg) res *= -1;
+    return res;
+}
+
+char *substr(char *str, int start, int end) {
+    int n = strlen(str);
+    if (start > end) {
+        return "\"\"";
+    } else {
+        char *res = malloc(end - start + 1);
+        snprintf(res, end - start + 2, "%s", str+start);
+        return res;
+    }
+}
+
+void writeline(int client_sock, char *msg) {
+    char *tmp = malloc(strlen(msg) + 2);
+    sprintf(tmp, "%s\n", msg);
+    write(client_sock, tmp, strlen(tmp) + 1);
+    free(tmp);
+}
+
+void exec_getrange(int client_sock, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 3) {
+        HtableAction instr = htable_get(htable, cmd->args[0]);
+        if (instr.status == SUCCESS) {
+            if (isnumber(cmd->args[1]) && isnumber(cmd->args[2])) {
+                int n = strlen(instr.value);
+                int start = strtoi(cmd->args[1]), end = strtoi(cmd->args[2]);
+                start = start < 0 ? n + start : start;
+                end = end < 0 ? n + end : end;
+                if ((start >= 0 && start < n) && (end >= 0 && end < n)) {
+                    writeline(client_sock, substr(instr.value, start, end));
+                } else {
+                    writeline(client_sock, "ERR value is not an integer or out of range");
+                }
+            } else {
+                writeline(client_sock, "ERR value is not an integer or out of range");
+            }
+        } else {
+            print_status(client_sock, instr);
+        }
+    } else {
+        char tmp[55];
+        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 3)\n", cmd->argc);
+        writeline(client_sock, tmp);
     }
 }
 
@@ -430,51 +503,53 @@ int ndigits(int x) {
 
 void exec_del(int client_sock, HashTable *htable, Command *cmd) {
     if (cmd->argc == 0) {
-        write(client_sock, "ERR wrong number of arguments for \'del\'\n", 40);
+        writeline(client_sock, "ERR wrong number of arguments for 'del'");
     } else {
         int success = 0;
         for (int i = 0; i < cmd->argc; i++) {
             HtableAction instr = htable_del(htable, cmd->args[i]); 
             if (instr.status == SUCCESS) success++;
         }
-        char *tmp = malloc(ndigits(success) + 2);
-        sprintf(tmp, "%d\n", success);
-        write(client_sock, tmp, strlen(tmp) + 1);
+        char *tmp = malloc(ndigits(success) + 1);
+        sprintf(tmp, "%d", success);
+        writeline(client_sock, tmp);
+        free(tmp);
     }
 }
 
 void exec_ping(int client_sock, Command *cmd) {
     if (cmd->argc == 0) {
-        write(client_sock, "PONG\n", 6);
+        writeline(client_sock, "PONG");
     } else if (cmd->argc == 1) {
         char *tmp = malloc(strlen(cmd->args[0]) + 1);
-        sprintf(tmp, "\"%s\"\n", cmd->args[0]);
-        write(client_sock, tmp, strlen(tmp) + 1);
+        sprintf(tmp, "\"%s\"", cmd->args[0]);
+        writeline(client_sock, tmp);
         free(tmp);
     } else {
         char tmp[58];
-        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 0..1)\n", cmd->argc);
-        write(client_sock, tmp, strlen(tmp) + 1);
+        sprintf(tmp, "ERR wrong number of arguments (given %d, expected 0..1)", cmd->argc);
+        writeline(client_sock, tmp);
     }
 }
 
 void exec_exists(int client_sock, HashTable *htable, Command *cmd) {
     if (cmd->argc == 0) {
-        write(client_sock, "ERR wrong number of arguments for \'exists\'\n", 43);
+        writeline(client_sock, "ERR wrong number of arguments for 'exists'");
     } else {
         int success = 0;
         for (int i = 0; i < cmd->argc; i++) {
             HtableAction instr = htable_exists(htable, cmd->args[i]);
             if (instr.status == SUCCESS) success++;
         }
-        char *tmp = malloc(ndigits(success) + 2);
-        sprintf(tmp, "%d\n", success);
-        write(client_sock, tmp, strlen(tmp) + 1);
+        char *tmp = malloc(ndigits(success) + 1);
+        sprintf(tmp, "%d", success);
+        writeline(client_sock, tmp);
+        free(tmp);
     }
 }
 
 void exec_unknown(int client_sock) {
-    write(client_sock, "ERR unrecognized command\n", 25);
+    writeline(client_sock, "ERR unrecognized command");
 }
 
 void execute(int client_sock, HashTable *htable, char *msg) {
@@ -483,6 +558,7 @@ void execute(int client_sock, HashTable *htable, char *msg) {
         case SET: exec_set(client_sock, htable, cmd); break;
         case GET: exec_get(client_sock, htable, cmd); break;
         case DEL: exec_del(client_sock, htable, cmd); break;
+        case GETRANGE: exec_getrange(client_sock, htable, cmd); break;
         case EXISTS: exec_exists(client_sock, htable, cmd); break;
         case PING: exec_ping(client_sock, cmd); break;
         case UNKNOWN: exec_unknown(client_sock); break;
