@@ -1,2 +1,2 @@
 all:
-	gcc server.c -o exec
+	gcc src/*.c -o exec  -Wall -Wextra
