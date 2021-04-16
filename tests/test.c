@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "common.h"
+#include "../src/common.h"
 
 // minunit
 #define mu_assert(message, test) do { if (!(test)) return message;  } while (0)

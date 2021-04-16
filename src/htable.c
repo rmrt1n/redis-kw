@@ -116,10 +116,11 @@ HtableAction htable_set(HashTable *htable, char *key, char *value) {
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
 
-    int i = 1;
+    int i = 1, not_null = 0;
     while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
         if (strcmp(cur_item->key, key) == 0) {
             item_free(cur_item);
+            not_null++;
             break;
         }
         hash = hash_func(key, htable->size, i++);
@@ -127,8 +128,10 @@ HtableAction htable_set(HashTable *htable, char *key, char *value) {
     }
 
     htable->items[hash] = new_item;
-    htable->used++;
-    htable_add_key(htable, hash);
+    if (!not_null) {
+        htable->used++;
+        htable_add_key(htable, hash);
+    }
 
     return (HtableAction){OK, NULL};
 }
