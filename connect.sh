@@ -1,1 +1,3 @@
-clear;nc localhost 6379
+./exec.out &
+clear
+nc localhost 6379

@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "parser.h"
+#include "common.h"
 
 static Command *command_init(int type, int argc, char **args) {
     Command *cmd = malloc(sizeof(Command));
     cmd->type = type;
     cmd->argc = argc;
-    cmd->args = args;
+    cmd->argv = args;
     return cmd;
 }
 
@@ -30,14 +30,16 @@ static char *get_next_token(Parser *parser) {
 
         if (parser->current_char == '"') {
             parser_advance(parser);
-            while (parser->current_char != '"' && parser->pos < strlen(parser->string)) {
+            while (parser->current_char != '"' &&
+                   parser->pos < strlen(parser->string))
+            {
                     char *temp = calloc(2, 1);
                     temp[0] = parser->current_char;
 
                     token = realloc(token, strlen(token) + 2);
                     strcat(token, temp);
 
-                    free(temp);
+                    free_all(1, temp);
                     parser_advance(parser);
             }
             parser_advance(parser);
@@ -45,14 +47,16 @@ static char *get_next_token(Parser *parser) {
         }
 
         if (isspace(parser->current_char) == 0) {
-            while (isspace(parser->current_char) == 0 && parser->pos < strlen(parser->string)) {
+            while (isspace(parser->current_char) == 0 &&
+                   parser->pos < strlen(parser->string))
+            {
                 char *temp = calloc(2, 1);
                 temp[0] = parser->current_char;
 
                 token = realloc(token, strlen(token) + 2);
                 strcat(token, temp);
 
-                free(temp);
+                free_all(1, temp);
                 parser_advance(parser);
             }
             return token;
@@ -66,7 +70,7 @@ static int get_argc(Parser *parser) {
     Parser *dup = parser_init(parser->string); 
     int argc = 0;
     while (get_next_token(dup) != NULL) argc++;
-    free(dup);
+    free_all(1, dup);
     return argc - 1; // -1 for command
 }
 
@@ -89,28 +93,32 @@ Command *parse(char *msg) {
             type = DEL; 
         } else if (strcmp(token, "exists") == 0) {
             type = EXISTS;
+        } else if (strcmp(token, "type") == 0) {
+            type = TYPE;
         } else if (strcmp(token, "set") == 0) {
             type = SET; 
         } else if (strcmp(token, "get") == 0) {
             type = GET; 
-        } else if (strcmp(token, "getrange") == 0) {
-            type = GETRANGE; 
-        } else if (strcmp(token, "getset") == 0) {
-            type = GETSET; 
-        } else if (strcmp(token, "mget") == 0) {
-            type = MGET; 
-        } else if (strcmp(token, "strlen") == 0) {
-            type = STRLEN; 
-        } else if (strcmp(token, "incr") == 0) {
-            type = INCR; 
-        } else if (strcmp(token, "decr") == 0) {
-            type = DECR; 
         } else if (strcmp(token, "hset") == 0) {
             type = HSET; 
         } else if (strcmp(token, "hget") == 0) {
             type = HGET; 
-        } else if (strcmp(token, "ping") == 0) {
-            type = PING;
+        } else if (strcmp(token, "hdel") == 0) {
+            type = HDEL; 
+        } else if (strcmp(token, "lpush") == 0) {
+            type = LPUSH; 
+        } else if (strcmp(token, "lpop") == 0) {
+            type = LPOP; 
+        } else if (strcmp(token, "rpush") == 0) {
+            type = RPUSH; 
+        } else if (strcmp(token, "rpop") == 0) {
+            type = RPOP; 
+        } else if (strcmp(token, "sadd") == 0) {
+            type = SADD; 
+        } else if (strcmp(token, "srem") == 0) {
+            type = SREM; 
+        } else if (strcmp(token, "sismember") == 0) {
+            type = SISMEMBER; 
         } else if (strcmp(token, "quit") == 0) {
             type = QUIT;
         } else {
@@ -124,13 +132,12 @@ Command *parse(char *msg) {
             args[i] = malloc(strlen(token) + 1);
             strcpy(args[i], token);
         }
-
         cmd = command_init(type, argc, args);
     } else {
         cmd = command_init(NOOP, 0, NULL);
     }
 
-    free(parser);
-    free(token);
+    free_all(2, parser, token);
     return cmd;
 }
+

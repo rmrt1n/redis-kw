@@ -6,37 +6,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "htable.h"
-#include "interpreter.h"
+#include "common.h"
 
-#define PORT_NUMBER 6379 // default port of redis
-#define SA struct sockaddr
-#define ulong unsigned long int
-
-// server functions
-int init_server(struct sockaddr_in *serv_addr);
-int accept_connection(int sockfd, struct sockaddr_in *client);
-void repl(int client_sock, HashTable *htable);
-
-int main() {
-    int sockfd;
-    struct sockaddr_in serv_addr, client;
-    HashTable *htable = htable_init(4096);
-
-    // start server
-    sockfd = init_server(&serv_addr);
-    // accept connection
-    int client_sock = accept_connection(sockfd, &client);
-    // server function
-    repl(client_sock, htable);
-
-    puts("server closed");
-    close(sockfd);
-    
-    return 0;
-}
-
-int init_server(struct sockaddr_in *serv_addr) {
+int init_server() {
+    struct sockaddr_in serv_addr;
     // create socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
@@ -45,12 +18,12 @@ int init_server(struct sockaddr_in *serv_addr) {
     }
 
     // assign ip & port
-    serv_addr->sin_family = AF_INET;
-    serv_addr->sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr->sin_port = htons(PORT_NUMBER);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(PORT_NUM);
 
     // bind socket to ip
-    if (bind(sockfd, (SA *)serv_addr, sizeof(*serv_addr)) != 0) {
+    if (bind(sockfd, (SA *)&serv_addr, sizeof(serv_addr)) != 0) {
         fputs("failed to bind socket", stderr);
         exit(1);
     }
@@ -65,25 +38,45 @@ int init_server(struct sockaddr_in *serv_addr) {
     return sockfd;
 } 
 
-int accept_connection(int sockfd, struct sockaddr_in *client) {
+int accept_connection(int sockfd) {
+    struct sockaddr_in client_addr;
     unsigned int len = sizeof(struct sockaddr_in);
-    int client_sock = accept(sockfd, (SA *)client, &len);
-    if (client_sock < 0) {
+    int client = accept(sockfd, (SA *)&client_addr, &len);
+    if (client < 0) {
         fputs("failed to accept connection", stderr);
         exit(1);
     }
 
-    writeline(client_sock, "connected");
-    return client_sock;
+    writeline(client, "connected");
+    return client;
 } 
 
-void repl(int client_sock, HashTable *htable) {
+void close_connection(int sockfd) {
+    puts("closing server");
+    close(sockfd);
+}
+
+char *readline(int client) {
+    char *msg = malloc(1024);
+    read(client, msg, 1024);
+    msg[strlen(msg) - 1] = '\0';
+    return msg;
+}
+
+void writeline(int client, char *msg) {
+    char *tmp = malloc(strlen(msg) + 2);
+    sprintf(tmp, "%s\n", msg);
+    write(client, tmp, strlen(tmp) + 1);
+    free(tmp);
+}
+
+void repl(int client, HashTable *htable) {
     while (1) {
         char *msg;
 
-        write(client_sock, "> ", 3);
-        msg = readline(client_sock);
-        execute(client_sock, htable, msg);
+        write(client, "> ", 3);
+        msg = readline(client);
+        execute(client, htable, msg);
 
         free(msg);
     }
