@@ -111,6 +111,26 @@ void htable_del_key(HashTable *htable, int keyhash) {
     htable->keys = newarr;
 }
 
+HashTable *get_ht_ref(HashTable *htable, char *key) {
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+    HashTable *ref;
+
+    int i = 1, not_null = 0;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            not_null++;
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+
+    not_null ? ref = (HashTable *)htable->items[hash]->value : NULL;
+    // ref = (HashTable *)cur_item->value;
+    return ref;
+}
+
 HtableAction htable_set(HashTable *htable, char *key, char *value) {
     Item *new_item = item_init(STR, key, value);
     int hash = hash_func(key, htable->size, 0);
@@ -232,7 +252,7 @@ HtableAction htable_hget(HashTable *htable, char *key, char *field) {
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
 
-    int i = 0, not_null = 0;
+    int i = 1, not_null = 0;
     while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
         if (strcmp(cur_item->key, key) == 0) {
             if (cur_item->type == HASH) {
@@ -248,6 +268,36 @@ HtableAction htable_hget(HashTable *htable, char *key, char *field) {
     }
     
     result = not_null ? result : (HtableAction){NIL, NULL};
+    return result;
+}
+
+// this is just a hack. only use this if sure key exists and is type HASH
+HtableAction *htable_hgetall(HashTable *htable, char *key) {
+    HtableAction *result = malloc(sizeof(HtableAction));
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+
+    int i = 1;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            HashTable *ht = (HashTable *)cur_item->value;
+            int size = 1, id = 0;
+            for (int j = 0; j < ht->used; j++) {
+                int hash = ht->keys[j];
+                size += 2;
+                result = realloc(result, size * sizeof(HtableAction));
+                result[id].status = OK;
+                result[id++].value = strdup(ht->items[hash]->key);
+                result[id].status = OK;
+                result[id++].value = strdup((char *)ht->items[hash]->value);
+            }
+            result[ht->used * 2] = (HtableAction){NIL, NULL};
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+    
     return result;
 }
 
@@ -487,3 +537,31 @@ HtableAction htable_sismember(HashTable *htable, char *key, char *value) {
     result = not_null ? result : (HtableAction){NIL, NULL};
     return result;
 }
+
+// same as hgetall
+HtableAction *htable_smembers(HashTable *htable, char *key) {
+    HtableAction *result = malloc(sizeof(HtableAction));
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+
+    int i = 1;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            Set *st = (Set *)cur_item->value;
+            int id = 1;
+            for (int j = 0; j < st->used; j++) {
+                int hash = st->keys[j];
+                result = realloc(result, (++id) * sizeof(HtableAction));
+                result[j].status = OK;
+                result[j].value = strdup((char *)st->members[hash]);
+            }
+            result[st->used] = (HtableAction){NIL, NULL};
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+
+    return result;
+}
+

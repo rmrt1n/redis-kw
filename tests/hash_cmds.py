@@ -5,6 +5,7 @@ def test_hash_cmds(c):
     test_hset(c)
     test_hget(c)
     test_hdel(c)
+    test_hgetall(c)
     print('all hash cmds passed')
 
 def test_hset(c):
@@ -120,4 +121,44 @@ def test_hdel(c):
           'got value from key of wrong type (set)')
     cleanup(c)
     print('\thdel cmd test passed')
+
+def test_hgetall(c):
+    # check gen
+    check(c, 'hset a 1 2 2 3 3 4 4 5', '(integer) 4',
+          'failed to hset multiple values to hash')
+    checklines(c, 4, 'hgetall a',
+               ['1) "1"', '2) "2"', '3) "2"', '4) "3"',
+                '5) "3"', '6) "4"', '7) "4"', '8) "5"'],
+               'failed to getall keyvals from hash')
+    check(c, 'hdel a 2 3 4', '(integer) 3',
+          'failed to hdel multiple values to hash')
+    checklines(c, 2, 'hgetall a',
+               ['1) "1"', '2) "2"'],
+               'failed to getall keyvals from hash with 1 key')
+    check(c, 'del a', '(integer) 1',
+          'failed to delete hash key')
+    check(c, 'exists a', '(integer) 0',
+          'got something from deleted key')
+    check(c, 'hgetall a', '(empty list or set)',
+          'got something from deleted hash key')
+    check(c, 'hgetall b', '(empty list or set)',
+          'got something from non existing hash key')
+    # check args
+    check(c, 'hgetall', 'ERR wrong number of arguments (given 0, expected 1)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'lpush c 1 2', '(integer) 2',
+          'failed to push c 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'hgetall b', 'ERR wrongtype operation',
+          'got value from key of wrong type (str)')
+    check(c, 'hgetall c', 'ERR wrongtype operation',
+          'got value from key of wrong type (list)')
+    check(c, 'hgetall d', 'ERR wrongtype operation',
+          'got value from key of wrong type (set)')
+    cleanup(c)
+    print('\thgetall cmd test passed')
 

@@ -54,9 +54,9 @@ typedef struct Command {
     enum {
         DEL, EXISTS, TYPE,
         SET, GET, MSET, MGET,
-        HSET, HGET, HDEL,
+        HSET, HGET, HDEL, HGETALL,
         LPUSH, LPOP, RPUSH, RPOP,
-        SADD, SREM, SISMEMBER,
+        SADD, SREM, SISMEMBER, SMEMBERS,
         QUIT, UNKNOWN, NOOP
     } type;
     int argc;
@@ -91,12 +91,14 @@ HtableAction htable_exists(HashTable *htable, char *key);
 HtableAction htable_type(HashTable *htable, char *key);
 HtableAction htable_hset(HashTable *htable, char *key, char *field, char *value);
 HtableAction htable_hget(HashTable *htable, char *key, char *field);
+HtableAction *htable_hgetall(HashTable *htable, char *key);
 HtableAction htable_hdel(HashTable *htable, char *key, char *field);
 HtableAction htable_push(HashTable *htable, char *key, char *value, int dir);
 HtableAction htable_pop(HashTable *htable, char *key, int dir);
 HtableAction htable_sadd(HashTable *htable, char *key, char *value);
 HtableAction htable_srem(HashTable *htable, char *key, char *value);
 HtableAction htable_sismember(HashTable *htable, char *key, char *value);
+HtableAction *htable_smembers(HashTable *htable, char *key);
 
 // list.c
 Node *list_node_init(char *value);

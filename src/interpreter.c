@@ -177,6 +177,30 @@ static void exec_hget(int client, HashTable *htable, Command *cmd) {
     }
 }
 
+static void exec_hgetall(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction res = htable_type(htable, cmd->argv[0]);
+        if (res.status == NIL) {
+            writeline(client, "(empty list or set)");
+            return;
+        } else {
+            if (strcmp(res.value, "hash") == 0) {
+                HtableAction *ress = htable_hgetall(htable, cmd->argv[0]);
+                int i = 1;
+                while (ress->status != NIL) {
+                    print_numbering(client, i++);
+                    print_quote_encase(client, ress->value);
+                    ress++;
+                }
+            } else {
+                writeline(client, "ERR wrongtype operation");
+            }
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1");
+    }
+}
+
 static void exec_hdel(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 1) {
         int oks = 0;
@@ -276,6 +300,30 @@ static void exec_sismember(int client, HashTable *htable, Command *cmd) {
     }
 }
 
+static void exec_smembers(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction res = htable_type(htable, cmd->argv[0]);
+        if (res.status == NIL) {
+            writeline(client, "(empty list or set)");
+            return;
+        } else {
+            if (strcmp(res.value, "set") == 0) {
+                HtableAction *ress = htable_smembers(htable, cmd->argv[0]);
+                int i = 1;
+                while (ress->status != NIL) {
+                    print_numbering(client, i++);
+                    print_quote_encase(client, ress->value);
+                    ress++;
+                }
+            } else {
+                writeline(client, "ERR wrongtype operation");
+            }
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1");
+    }
+}
+
 static void exec_unknown(int client) {
     writeline(client, "ERR unrecognized command");
 }
@@ -293,6 +341,7 @@ void execute(int client, HashTable *htable, char *msg) {
         case HSET: exec_hset(client, htable, cmd); break;
         case HGET: exec_hget(client, htable, cmd); break;
         case HDEL: exec_hdel(client, htable, cmd); break;
+        case HGETALL: exec_hgetall(client, htable, cmd); break;
         case LPUSH: exec_push(client, htable, cmd, LEFT); break;
         case LPOP: exec_pop(client, htable, cmd, LEFT); break;
         case RPUSH: exec_push(client, htable, cmd, RIGHT); break;
@@ -300,6 +349,7 @@ void execute(int client, HashTable *htable, char *msg) {
         case SADD: exec_sadd(client, htable, cmd); break;
         case SREM: exec_srem(client, htable, cmd); break;
         case SISMEMBER: exec_sismember(client, htable, cmd); break;
+        case SMEMBERS: exec_smembers(client, htable, cmd); break;
         case UNKNOWN: exec_unknown(client); break;
         case QUIT: exit(0); break;
         case NOOP: break;

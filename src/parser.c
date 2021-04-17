@@ -99,6 +99,7 @@ Command *parse(char *msg) {
         else if (strcmp(token, "hset") == 0) {type = HSET;}
         else if (strcmp(token, "hget") == 0) {type = HGET;}
         else if (strcmp(token, "hdel") == 0) {type = HDEL;}
+        else if (strcmp(token, "hgetall") == 0) {type = HGETALL;}
         else if (strcmp(token, "lpush") == 0) {type = LPUSH;}
         else if (strcmp(token, "lpop") == 0) {type = LPOP;}
         else if (strcmp(token, "rpush") == 0) {type = RPUSH;}
@@ -106,6 +107,7 @@ Command *parse(char *msg) {
         else if (strcmp(token, "sadd") == 0) {type = SADD;}
         else if (strcmp(token, "srem") == 0) {type = SREM;}
         else if (strcmp(token, "sismember") == 0) {type = SISMEMBER;}
+        else if (strcmp(token, "smembers") == 0) {type = SMEMBERS;}
         else if (strcmp(token, "quit") == 0) {type = QUIT;}
         else {type = UNKNOWN;}
         
