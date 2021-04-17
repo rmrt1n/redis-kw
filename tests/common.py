@@ -1,0 +1,16 @@
+from pwn import *
+import os
+
+def check(c, inp, expected, msg):
+    c.recvuntil('> ')
+    c.sendline(inp);
+    res = c.recvline().strip()[1:].decode('utf-8')
+    ok = True if res == expected else False
+    if not ok:
+        print(msg)
+        exit(1)
+
+def cleanup(c):
+    c.recvuntil('> ')
+    c.sendline('del a b c d');
+    c.recvline()

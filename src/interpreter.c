@@ -147,11 +147,11 @@ static void exec_hdel(int client, HashTable *htable, Command *cmd) {
         int oks = 0;
         for (int i = 1; i < cmd->argc; i++) {
             HtableAction res = htable_hdel(htable, cmd->argv[0], cmd->argv[i]);
-            if (res.status == ERR) {
-                print_status(client, res);
-                return;
+            switch (res.status) {
+                case OK: oks++; break;
+                case NIL: continue; break;
+                case ERR: print_status(client, res); return; break;
             }
-            oks++;
         }
         print_integer(client, oks);
     } else {
@@ -199,13 +199,13 @@ static void exec_sadd(int client, HashTable *htable, Command *cmd) {
         int oks = 0;
         for (int i = 1; i < cmd->argc; i++) {
             HtableAction res = htable_sadd(htable, cmd->argv[0], cmd->argv[i]);
-            if (res.status == ERR) {
-                print_status(client, res);
-                return;
+            switch (res.status) {
+                case OK: oks++; break;
+                case NIL: continue; break;
+                case ERR: print_status(client, res); return; break;
             }
-            oks++;
         }
-        print_integer(client, oks);    
+        print_integer(client, oks);
     } else {
         writeline(client, "ERR wrong number of arguments for 'sadd'");
     }
@@ -216,11 +216,11 @@ static void exec_srem(int client, HashTable *htable, Command *cmd) {
         int oks = 0;
         for (int i = 1; i < cmd->argc; i++) {
             HtableAction res = htable_srem(htable, cmd->argv[0], cmd->argv[i]);
-            if (res.status == ERR) {
-                print_status(client, res);
-                return;
+            switch (res.status) {
+                case OK: oks++; break;
+                case NIL: continue; break;
+                case ERR: print_status(client, res); return; break;
             }
-            oks++;
         }
         print_integer(client, oks);    
     } else {

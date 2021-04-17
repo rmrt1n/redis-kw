@@ -1,21 +1,16 @@
 from pwn import *
 import os
 import sys
-from str_cmds import *
-
-def check(c, inp, expected, msg):
-    c.recvuntil('> ')
-    c.sendline(inp);
-    res = c.recvline().strip()[1:].decode('utf-8')
-    ok = True if res == expected else False
-    if not ok:
-        print(msg)
-        exit(1)
+import str_cmds, key_cmds, list_cmds, set_cmds, hash_cmds
 
 def test_all(c):
-    test_set(c)
+    key_cmds.test_key_cmds(c)
+    str_cmds.test_str_cmds(c)
+    hash_cmds.test_hash_cmds(c)
+    list_cmds.test_list_cmds(c)
+    set_cmds.test_set_cmds(c)
 
 if __name__ == '__main__':
     c = remote('localhost', 6379);
-    test_all(c);
+    test_all(c)
     c.close()

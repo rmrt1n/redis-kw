@@ -47,7 +47,7 @@ HtableAction set_add(Set *set, char *value) {
 
     int i = 1;
     while (cur_item != NULL && cur_item != &SET_DELETED) {
-        if (strcmp(cur_item, value) == 0) result = (HtableAction){ERR, NULL};
+        if (strcmp(cur_item, value) == 0) result = (HtableAction){NIL, NULL};
         hash = hash_func(value, set->size, i++);
         cur_item = set->members[hash];
     }

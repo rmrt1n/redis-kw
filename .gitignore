@@ -1,2 +1,2 @@
 *.out
-test/__pycache__
+tests/__pycache__
