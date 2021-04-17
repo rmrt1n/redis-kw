@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "common.h"
 
 static int ndigits(int x) {
@@ -44,6 +45,13 @@ static void print_integer(int client, int n) {
     free_all(1, tmp);
 }
 
+static void print_numbering(int client, int n) {
+    char *tmp = malloc(3 + ndigits(n));
+    sprintf(tmp, "%d) ", n);
+    write(client, tmp, strlen(tmp) + 1);
+    free_all(1, tmp);
+}
+
 static void exec_set(int client, HashTable *htable, Command *cmd) {
     HtableAction res;
     switch (cmd->argc) {
@@ -73,6 +81,33 @@ static void exec_get(int client, HashTable *htable, Command *cmd) {
         }
     } else {
         print_wrong_argc(client, cmd->argc, "1");
+    }
+}
+
+static void exec_mset(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc >= 2 && cmd->argc % 2 == 0) {
+        for (int i = 0; i < cmd->argc; i+= 2) {
+            htable_set(htable, cmd->argv[i], cmd->argv[i+1]);
+        }
+        writeline(client, "OK");
+    } else {
+        writeline(client, "ERR wrong number of arguments for 'mset'");
+    }
+}
+
+static void exec_mget(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc > 0) {
+        for (int i = 0; i < cmd->argc; i++) {
+            HtableAction res = htable_get(htable, cmd->argv[i]);
+            print_numbering(client, i + 1);
+            if (res.status == OK) {
+                print_quote_encase(client, res.value);
+            } else {
+                writeline(client, "(nil)");
+            }
+        }
+    } else {
+        writeline(client, "ERR wrong number of arguments for 'mget'");
     }
 }
 
@@ -253,6 +288,8 @@ void execute(int client, HashTable *htable, char *msg) {
         case TYPE: exec_type(client, htable, cmd); break;
         case SET: exec_set(client, htable, cmd); break;
         case GET: exec_get(client, htable, cmd); break;
+        case MSET: exec_mset(client, htable, cmd); break;
+        case MGET: exec_mget(client, htable, cmd); break;
         case HSET: exec_hset(client, htable, cmd); break;
         case HGET: exec_hget(client, htable, cmd); break;
         case HDEL: exec_hdel(client, htable, cmd); break;
