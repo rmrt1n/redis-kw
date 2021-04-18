@@ -53,7 +53,7 @@ typedef struct Parser {
 typedef struct Command {
     enum {
         DEL, EXISTS, TYPE,
-        SET, GET, MSET, MGET,
+        SET, GET, MSET, MGET, INCR, DECR,
         HSET, HGET, HDEL, HGETALL,
         LPUSH, LPOP, RPUSH, RPOP, LLEN,
         SADD, SREM, SISMEMBER, SMEMBERS,

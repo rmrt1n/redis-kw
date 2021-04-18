@@ -101,6 +101,19 @@ static void exec_mget(int client, HashTable *htable, Command *cmd) {
     }
 }
 
+static void exec_incr(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction res = htable_get(htable, cmd->argv[0]);
+        switch (res.status) {
+            case OK:
+            case NIL:
+            case ERR:
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1");
+    }
+}
+
 static void exec_del(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 0) {
         int oks = 0;
@@ -338,6 +351,8 @@ void execute(int client, HashTable *htable, char *msg) {
         case GET: exec_get(client, htable, cmd); break;
         case MSET: exec_mset(client, htable, cmd); break;
         case MGET: exec_mget(client, htable, cmd); break;
+        case INCR: exec_incr(client, htable, cmd); break;
+        case DECR: exec_decr(client, htable, cmd); break;
         case HSET: exec_hset(client, htable, cmd); break;
         case HGET: exec_hget(client, htable, cmd); break;
         case HDEL: exec_hdel(client, htable, cmd); break;

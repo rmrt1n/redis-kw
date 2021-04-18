@@ -96,6 +96,8 @@ Command *parse(char *msg) {
         else if (strcmp(token, "get") == 0) {type = GET;}
         else if (strcmp(token, "mset") == 0) {type = MSET;}
         else if (strcmp(token, "mget") == 0) {type = MGET;}
+        else if (strcmp(token, "incr") == 0) {type = INCR;}
+        else if (strcmp(token, "decr") == 0) {type = DECR;}
         else if (strcmp(token, "hset") == 0) {type = HSET;}
         else if (strcmp(token, "hget") == 0) {type = HGET;}
         else if (strcmp(token, "hdel") == 0) {type = HDEL;}
