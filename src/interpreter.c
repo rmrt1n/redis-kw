@@ -106,14 +106,120 @@ static void exec_incr(int client, HashTable *htable, Command *cmd) {
         HtableAction res = htable_get(htable, cmd->argv[0]);
         switch (res.status) {
             case OK:
+                if (isnumber(res.value)) {
+                    int n = strtoi(res.value) + 1;
+                    char *tmp = intostr(n);
+                    htable_set(htable, cmd->argv[0], tmp);
+                    print_integer(client, n);
+                    free_all(1, tmp);
+                } else {
+                    writeline(
+                        client, "ERR value is not an integer or out of range");
+                }
+                break;
             case NIL:
+                htable_set(htable, cmd->argv[0], "1");
+                print_integer(client, 1);
+                break;
             case ERR:
+                print_status(client, res);
+                break;
         }
     } else {
         print_wrong_argc(client, cmd->argc, "1");
     }
 }
 
+static void exec_decr(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction res = htable_get(htable, cmd->argv[0]);
+        switch (res.status) {
+            case OK:
+                if (isnumber(res.value)) {
+                    int n = strtoi(res.value) - 1;
+                    char *tmp = intostr(n);
+                    htable_set(htable, cmd->argv[0], tmp);
+                    print_integer(client, n);
+                    free_all(1, tmp);
+                } else {
+                    writeline(
+                        client, "ERR value is not an integer or out of range");
+                }
+                break;
+            case NIL:
+                htable_set(htable, cmd->argv[0], "-1");
+                print_integer(client, -1);
+                break;
+            case ERR:
+                print_status(client, res);
+                break;
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1");
+    }
+}
+
+static void exec_incrby(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 2) {
+        HtableAction res = htable_get(htable, cmd->argv[0]);
+        switch (res.status) {
+            case OK:
+                if (isnumber(res.value)) {
+                    int n = strtoi(res.value) + strtoi(cmd->argv[1]);
+                    char *tmp = intostr(n);
+                    htable_set(htable, cmd->argv[0], tmp);
+                    print_integer(client, n);
+                    free_all(1, tmp);
+                } else {
+                    writeline(
+                        client, "ERR value is not an integer or out of range");
+                }
+                break;
+            case NIL:
+                htable_set(htable, cmd->argv[0], cmd->argv[1]);
+                print_integer(client, strtoi(cmd->argv[1]));
+                break;
+            case ERR:
+                print_status(client, res);
+                break;
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "2");
+    }
+}
+
+static void exec_decrby(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 2) {
+        HtableAction res = htable_get(htable, cmd->argv[0]);
+        int n;
+        char *tmp;
+        switch (res.status) {
+            case OK:
+                if (isnumber(res.value)) {
+                    n = strtoi(res.value) - strtoi(cmd->argv[1]);
+                    tmp = intostr(n);
+                    htable_set(htable, cmd->argv[0], tmp);
+                    print_integer(client, n);
+                    free_all(1, tmp);
+                } else {
+                    writeline(
+                        client, "ERR value is not an integer or out of range");
+                }
+                break;
+            case NIL:
+                n = strtoi(cmd->argv[1]) * -1;
+                tmp = intostr(n);
+                htable_set(htable, cmd->argv[0], tmp);
+                print_integer(client, n);
+                break;
+            case ERR:
+                print_status(client, res);
+                break;
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "2");
+    }
+}
 static void exec_del(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 0) {
         int oks = 0;
@@ -353,6 +459,8 @@ void execute(int client, HashTable *htable, char *msg) {
         case MGET: exec_mget(client, htable, cmd); break;
         case INCR: exec_incr(client, htable, cmd); break;
         case DECR: exec_decr(client, htable, cmd); break;
+        case INCRBY: exec_incrby(client, htable, cmd); break;
+        case DECRBY: exec_decrby(client, htable, cmd); break;
         case HSET: exec_hset(client, htable, cmd); break;
         case HGET: exec_hget(client, htable, cmd); break;
         case HDEL: exec_hdel(client, htable, cmd); break;

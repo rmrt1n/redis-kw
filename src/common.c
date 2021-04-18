@@ -1,5 +1,8 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include "common.h"
 
 void free_all(int n, ...) {
@@ -20,6 +23,35 @@ int ndigits(int x) {
         n /= 10;
         res++;
     }
+    return res;
+}
+
+int isnumber(char *str) {
+    int i = *str == '-' ? 1 : 0;
+    int n = strlen(str);
+    for (; i < n; i++) {
+        if (isdigit(str[i]) == 0) return 0;
+    }
+    return 1;
+}
+
+int strtoi(char *str) {
+    int res = 0, i = *str == '-' ? 1 : 0;
+    int neg = i, n = strlen(str);
+    for (; i < n; i++) {
+        res = res * 10 + (str[i] - '0');
+    }
+    if (neg) res *= -1;
+    return res;
+}
+
+char * intostr(int n) {
+    char *res = malloc(ndigits(n) + 2);
+    // if (n < 0) {
+        // sprintf(res, "-%d", n);
+    // } else {
+        sprintf(res, "%d", n);
+    // }
     return res;
 }
 

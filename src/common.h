@@ -53,7 +53,7 @@ typedef struct Parser {
 typedef struct Command {
     enum {
         DEL, EXISTS, TYPE,
-        SET, GET, MSET, MGET, INCR, DECR,
+        SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY,
         HSET, HGET, HDEL, HGETALL,
         LPUSH, LPOP, RPUSH, RPOP, LLEN,
         SADD, SREM, SISMEMBER, SMEMBERS,
@@ -63,8 +63,12 @@ typedef struct Command {
     char **argv;
 } Command;
 
+// common.c helper functions
 void free_all(int n, ...);
 int ndigits(int x);
+int isnumber(char *str);
+int strtoi(char *str);
+char *intostr(int n);
 
 // server.c
 int init_server(void);

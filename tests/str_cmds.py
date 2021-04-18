@@ -6,6 +6,10 @@ def test_str_cmds(c):
     test_get(c)
     test_mset(c)
     test_mget(c)
+    test_incr(c)
+    test_decr(c)
+    test_incrby(c)
+    test_decrby(c)
     print('all str cmds tests passed')
 
 def test_set(c):
@@ -155,4 +159,162 @@ def test_mget(c):
                'got something from different types')
     cleanup(c)
     print('\tmget cmd tests passed')
+
+def test_incr(c):
+    # check gen
+    check(c, 'set a 1', 'OK',
+          'failed to set a to 1')
+    check(c, 'incr a', '(integer) 2',
+          'failed to increment value')
+    check(c, 'set a hello', 'OK',
+          'failed to set a to hello')
+    check(c, 'incr a', 'ERR value is not an integer or out of range',
+          'incremented value that is not integer')
+    check(c, 'set a -1', 'OK',
+          'failed to set a to -1')
+    check(c, 'incr a', '(integer) 0',
+          'failed to increment negative values')
+    # check args
+    check(c, 'incr', 'ERR wrong number of arguments (given 0, expected 1)',
+          'failed to recognize syntax error')
+    check(c, 'incr a 1', 'ERR wrong number of arguments (given 2, expected 1)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'hset b 1 2', '(integer) 1',
+          'failed to hset a 1 to 2')
+    check(c, 'lpush c 1', '(integer) 1',
+          'failed to push to list')
+    check(c, 'sadd d 1', '(integer) 1',
+          'failed to add 1 to set')
+    check(c, 'incr b', 'ERR wrongtype operation',
+          'incremented key of wrong type (hash)')
+    check(c, 'incr c', 'ERR wrongtype operation',
+          'incremented key of wrong type (list)')
+    check(c, 'incr d', 'ERR wrongtype operation',
+          'incremented key of wrong type (set)')
+    cleanup(c)
+    print('\tincr cmd tests passed')
+
+def test_decr(c):
+    # check gen
+    check(c, 'set a 1', 'OK',
+          'failed to set a to 1')
+    check(c, 'decr a', '(integer) 0',
+          'failed to decrement value')
+    check(c, 'set a hello', 'OK',
+          'failed to set a to hello')
+    check(c, 'decr a', 'ERR value is not an integer or out of range',
+          'incremented value that is not integer')
+    check(c, 'set a -1', 'OK',
+          'failed to set a to -1')
+    check(c, 'decr a', '(integer) -2',
+          'failed to decrement negative values')
+    check(c, 'set a 0', 'OK',
+          'failed to set a to -1')
+    check(c, 'decr a', '(integer) -1',
+          'failed to decrement from zero')
+    # check args
+    check(c, 'decr', 'ERR wrong number of arguments (given 0, expected 1)',
+          'failed to recognize syntax error')
+    check(c, 'decr a 1', 'ERR wrong number of arguments (given 2, expected 1)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'hset b 1 2', '(integer) 1',
+          'failed to hset a 1 to 2')
+    check(c, 'lpush c 1', '(integer) 1',
+          'failed to push to list')
+    check(c, 'sadd d 1', '(integer) 1',
+          'failed to add 1 to set')
+    check(c, 'decr b', 'ERR wrongtype operation',
+          'incremented key of wrong type (hash)')
+    check(c, 'decr c', 'ERR wrongtype operation',
+          'incremented key of wrong type (list)')
+    check(c, 'decr d', 'ERR wrongtype operation',
+          'incremented key of wrong type (set)')
+    cleanup(c)
+    print('\tdecr cmd tests passed')
+
+def test_incrby(c):
+    # check gen
+    check(c, 'set a 1', 'OK',
+          'failed to set a to 1')
+    check(c, 'incrby a 40', '(integer) 41',
+          'failed to increment value')
+    check(c, 'set a hello', 'OK',
+          'failed to set a to hello')
+    check(c, 'incr a', 'ERR value is not an integer or out of range',
+          'incremented value that is not integer')
+    check(c, 'set a -1', 'OK',
+          'failed to set a to -1')
+    check(c, 'incrby a 30', '(integer) 29',
+          'failed to increment negative values')
+    check(c, 'incrby a -2', '(integer) 27',
+          'failed to increment by negative values')
+    check(c, 'incrby a 0', '(integer) 27',
+          'failed to increment by zero')
+    # check args
+    check(c, 'incrby', 'ERR wrong number of arguments (given 0, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'incrby a', 'ERR wrong number of arguments (given 1, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'incrby a 1 2',
+          'ERR wrong number of arguments (given 3, expected 2)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'hset b 1 2', '(integer) 1',
+          'failed to hset a 1 to 2')
+    check(c, 'lpush c 1', '(integer) 1',
+          'failed to push to list')
+    check(c, 'sadd d 1', '(integer) 1',
+          'failed to add 1 to set')
+    check(c, 'incrby b 1', 'ERR wrongtype operation',
+          'incremented key of wrong type (hash)')
+    check(c, 'incrby c 1', 'ERR wrongtype operation',
+          'incremented key of wrong type (list)')
+    check(c, 'incrby d 1', 'ERR wrongtype operation',
+          'incremented key of wrong type (set)')
+    cleanup(c)
+    print('\tincrby cmd tests passed')
+
+def test_decrby(c):
+    # check gen
+    check(c, 'set a 1', 'OK',
+          'failed to set a to 1')
+    check(c, 'decrby a 40', '(integer) -39',
+          'failed to decrement value')
+    check(c, 'set a hello', 'OK',
+          'failed to set a to hello')
+    check(c, 'incr a', 'ERR value is not an integer or out of range',
+          'decremented value that is not integer')
+    check(c, 'set a -1', 'OK',
+          'failed to set a to -1')
+    check(c, 'decrby a 30', '(integer) -31',
+          'failed to decrement negative values')
+    check(c, 'decrby a -2', '(integer) -29',
+          'failed to decrement by negative values')
+    check(c, 'decrby a 0', '(integer) -29',
+          'failed to decrement by zero')
+    # check args
+    check(c, 'decrby', 'ERR wrong number of arguments (given 0, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'decrby a', 'ERR wrong number of arguments (given 1, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'decrby a 1 2',
+          'ERR wrong number of arguments (given 3, expected 2)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'hset b 1 2', '(integer) 1',
+          'failed to hset a 1 to 2')
+    check(c, 'lpush c 1', '(integer) 1',
+          'failed to push to list')
+    check(c, 'sadd d 1', '(integer) 1',
+          'failed to add 1 to set')
+    check(c, 'decrby b 1', 'ERR wrongtype operation',
+          'incremented key of wrong type (hash)')
+    check(c, 'decrby c 1', 'ERR wrongtype operation',
+          'incremented key of wrong type (list)')
+    check(c, 'decrby d 1', 'ERR wrongtype operation',
+          'incremented key of wrong type (set)')
+    cleanup(c)
+    print('\tdecrby cmd tests passed')
 
