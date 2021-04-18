@@ -4,16 +4,6 @@
 #include <unistd.h>
 #include "common.h"
 
-static int ndigits(int x) {
-    int n = x < 0 ? x * -1 : x;
-    int res = 0;
-    while (n > 0) {
-        n /= 10;
-        res++;
-    }
-    return res;
-}
-
 static void print_status(int client, HtableAction action) {
     switch (action.status) {
         case OK: writeline(client, "OK"); break;
@@ -253,6 +243,19 @@ static void exec_pop(int client, HashTable *htable, Command *cmd, int dir) {
     }
 }
 
+// static void exec_llen(int client, HashTable *htable, Command *cmd) {
+    // if (cmd->argc == 1) {
+        // HtableAction res = htable_llen(htable, cmd->argv[0]);
+        // if (res.status == OK) {
+            // // print_quote_encase(client, res.value);
+        // } else {
+            // print_status(client, res);
+        // }
+    // } else {
+        // print_wrong_argc(client, cmd->argc, "1");
+    // }
+// }
+
 static void exec_sadd(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 1) {
         int oks = 0;
@@ -346,6 +349,7 @@ void execute(int client, HashTable *htable, char *msg) {
         case LPOP: exec_pop(client, htable, cmd, LEFT); break;
         case RPUSH: exec_push(client, htable, cmd, RIGHT); break;
         case RPOP: exec_pop(client, htable, cmd, RIGHT); break;
+        // case LLEN: exec_llen(client, htable, cmd); break;
         case SADD: exec_sadd(client, htable, cmd); break;
         case SREM: exec_srem(client, htable, cmd); break;
         case SISMEMBER: exec_sismember(client, htable, cmd); break;

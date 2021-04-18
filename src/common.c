@@ -13,3 +13,13 @@ void free_all(int n, ...) {
     va_end(args);
 }
 
+int ndigits(int x) {
+    int n = x < 0 ? x * -1 : x;
+    int res = 0;
+    while (n > 0) {
+        n /= 10;
+        res++;
+    }
+    return res;
+}
+

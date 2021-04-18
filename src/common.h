@@ -55,7 +55,7 @@ typedef struct Command {
         DEL, EXISTS, TYPE,
         SET, GET, MSET, MGET,
         HSET, HGET, HDEL, HGETALL,
-        LPUSH, LPOP, RPUSH, RPOP,
+        LPUSH, LPOP, RPUSH, RPOP, LLEN,
         SADD, SREM, SISMEMBER, SMEMBERS,
         QUIT, UNKNOWN, NOOP
     } type;
@@ -64,6 +64,7 @@ typedef struct Command {
 } Command;
 
 void free_all(int n, ...);
+int ndigits(int x);
 
 // server.c
 int init_server(void);

@@ -448,6 +448,35 @@ HtableAction htable_pop(HashTable *htable, char *key, int dir) {
     return result;
 }
 
+HtableAction htable_llen(HashTable *htable, char *key) {
+    HtableAction result;
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+
+    int i = 1, not_null = 0;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            if (cur_item->type == LIST) {
+                List *tmp = (List *)htable->items[hash]->value;
+                char *num = malloc(ndigits(tmp->len) + 1);
+                sprintf(num, "%d", tmp->len);
+                result.status = OK;
+                result.value = strdup(num);
+                free_all(1, num);
+            } else {
+                result = (HtableAction){ERR, NULL};
+            }
+            not_null++;
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+
+    result = not_null ? result : (HtableAction){NIL, NULL};
+    return result;
+}
+
 HtableAction htable_sadd(HashTable *htable, char *key, char *value) {
     HtableAction result;
     int hash = hash_func(key, htable->size, 0);
