@@ -169,22 +169,20 @@ static void exec_hget(int client, HashTable *htable, Command *cmd) {
 
 static void exec_hgetall(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc == 1) {
-        HtableAction res = htable_type(htable, cmd->argv[0]);
-        if (res.status == NIL) {
-            writeline(client, "(empty list or set)");
-            return;
-        } else {
-            if (strcmp(res.value, "hash") == 0) {
-                HtableAction *ress = htable_hgetall(htable, cmd->argv[0]);
-                int i = 1;
-                while (ress->status != NIL) {
+        HtableAction res = htable_hgetall(htable, cmd->argv[0]);
+        char **tmp;
+        int i = 1;
+        switch (res.status) {
+            case OK:
+                tmp = (char **)res.value;
+                while (*tmp != NULL) {
                     print_numbering(client, i++);
-                    print_quote_encase(client, ress->value);
-                    ress++;
+                    print_quote_encase(client, *tmp);
+                    tmp++;
                 }
-            } else {
-                writeline(client, "ERR wrongtype operation");
-            }
+                break;
+            case NIL: writeline(client, "(empty list or set)"); break;
+            case ERR: print_status(client, res); break;
         }
     } else {
         print_wrong_argc(client, cmd->argc, "1");
@@ -243,18 +241,19 @@ static void exec_pop(int client, HashTable *htable, Command *cmd, int dir) {
     }
 }
 
-// static void exec_llen(int client, HashTable *htable, Command *cmd) {
-    // if (cmd->argc == 1) {
-        // HtableAction res = htable_llen(htable, cmd->argv[0]);
-        // if (res.status == OK) {
-            // // print_quote_encase(client, res.value);
-        // } else {
-            // print_status(client, res);
-        // }
-    // } else {
-        // print_wrong_argc(client, cmd->argc, "1");
-    // }
-// }
+static void exec_llen(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction res = htable_llen(htable, cmd->argv[0]);
+        int x;
+        switch (res.status) {
+            case OK: x = *(int *)res.value; print_integer(client, x); break;
+            case NIL: print_integer(client, 0); break;
+            case ERR: print_status(client, res); break;
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1");
+    }
+}
 
 static void exec_sadd(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 1) {
@@ -305,22 +304,20 @@ static void exec_sismember(int client, HashTable *htable, Command *cmd) {
 
 static void exec_smembers(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc == 1) {
-        HtableAction res = htable_type(htable, cmd->argv[0]);
-        if (res.status == NIL) {
-            writeline(client, "(empty list or set)");
-            return;
-        } else {
-            if (strcmp(res.value, "set") == 0) {
-                HtableAction *ress = htable_smembers(htable, cmd->argv[0]);
-                int i = 1;
-                while (ress->status != NIL) {
+        HtableAction res = htable_smembers(htable, cmd->argv[0]);
+        char **tmp;
+        int i = 1;
+        switch (res.status) {
+            case OK:
+                tmp = (char **)res.value;
+                while (*tmp != NULL) {
                     print_numbering(client, i++);
-                    print_quote_encase(client, ress->value);
-                    ress++;
+                    print_quote_encase(client, *tmp);
+                    tmp++;
                 }
-            } else {
-                writeline(client, "ERR wrongtype operation");
-            }
+                break;
+            case NIL: writeline(client, "(empty list or set)"); break;
+            case ERR: print_status(client, res); break;
         }
     } else {
         print_wrong_argc(client, cmd->argc, "1");
@@ -349,7 +346,7 @@ void execute(int client, HashTable *htable, char *msg) {
         case LPOP: exec_pop(client, htable, cmd, LEFT); break;
         case RPUSH: exec_push(client, htable, cmd, RIGHT); break;
         case RPOP: exec_pop(client, htable, cmd, RIGHT); break;
-        // case LLEN: exec_llen(client, htable, cmd); break;
+        case LLEN: exec_llen(client, htable, cmd); break;
         case SADD: exec_sadd(client, htable, cmd); break;
         case SREM: exec_srem(client, htable, cmd); break;
         case SISMEMBER: exec_sismember(client, htable, cmd); break;

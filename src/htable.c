@@ -271,33 +271,38 @@ HtableAction htable_hget(HashTable *htable, char *key, char *field) {
     return result;
 }
 
-// this is just a hack. only use this if sure key exists and is type HASH
-HtableAction *htable_hgetall(HashTable *htable, char *key) {
-    HtableAction *result = malloc(sizeof(HtableAction));
+HtableAction htable_hgetall(HashTable *htable, char *key) {
+    HtableAction result;
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
+    char **vals = malloc(sizeof(char *));
 
-    int i = 1;
+    int i = 1, not_null = 0;
     while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
         if (strcmp(cur_item->key, key) == 0) {
-            HashTable *ht = (HashTable *)cur_item->value;
-            int size = 1, id = 0;
-            for (int j = 0; j < ht->used; j++) {
-                int hash = ht->keys[j];
-                size += 2;
-                result = realloc(result, size * sizeof(HtableAction));
-                result[id].status = OK;
-                result[id++].value = strdup(ht->items[hash]->key);
-                result[id].status = OK;
-                result[id++].value = strdup((char *)ht->items[hash]->value);
+            if (cur_item->type == HASH) {
+                HashTable *ht = (HashTable *)cur_item->value;
+                int size = 1, id = 0;
+                for (int j = 0; j < ht->used; j++) {
+                    int hash = ht->keys[j];
+                    size += 2;
+                    vals = realloc(vals, size * sizeof(char *));
+                    vals[id++] = strdup(ht->items[hash]->key);
+                    vals[id++] = strdup((char *)ht->items[hash]->value);
+                }
+                vals[ht->used * 2] = NULL;
+                result = (HtableAction){OK, vals};
+            } else {
+                result = (HtableAction){ERR, NULL};
             }
-            result[ht->used * 2] = (HtableAction){NIL, NULL};
+            not_null++;
             break;
         }
         hash = hash_func(key, htable->size, i++);
         cur_item = htable->items[hash];
     }
     
+    result = not_null ? result : (HtableAction){NIL, NULL};
     return result;
 }
 
@@ -458,11 +463,8 @@ HtableAction htable_llen(HashTable *htable, char *key) {
         if (strcmp(cur_item->key, key) == 0) {
             if (cur_item->type == LIST) {
                 List *tmp = (List *)htable->items[hash]->value;
-                char *num = malloc(ndigits(tmp->len) + 1);
-                sprintf(num, "%d", tmp->len);
                 result.status = OK;
-                result.value = strdup(num);
-                free_all(1, num);
+                result.value = &tmp->len;
             } else {
                 result = (HtableAction){ERR, NULL};
             }
@@ -567,30 +569,35 @@ HtableAction htable_sismember(HashTable *htable, char *key, char *value) {
     return result;
 }
 
-// same as hgetall
-HtableAction *htable_smembers(HashTable *htable, char *key) {
-    HtableAction *result = malloc(sizeof(HtableAction));
+HtableAction htable_smembers(HashTable *htable, char *key) {
+    HtableAction result;
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
+    char **vals = malloc(sizeof(char *));
 
-    int i = 1;
+    int i = 1, not_null = 0;
     while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
         if (strcmp(cur_item->key, key) == 0) {
-            Set *st = (Set *)cur_item->value;
-            int id = 1;
-            for (int j = 0; j < st->used; j++) {
-                int hash = st->keys[j];
-                result = realloc(result, (++id) * sizeof(HtableAction));
-                result[j].status = OK;
-                result[j].value = strdup((char *)st->members[hash]);
+            if (cur_item->type == TSET) {
+                Set *st = (Set *)cur_item->value;
+                int id = 1;
+                for (int j = 0; j < st->used; j++) {
+                    int hash = st->keys[j];
+                    vals = realloc(vals, (++id) * sizeof(char *));
+                    vals[j] = strdup((char *)st->members[hash]);
+                }
+                vals[st->used] = NULL;
+                result = (HtableAction){OK, vals};
+            } else {
+                result = (HtableAction){ERR, NULL};
             }
-            result[st->used] = (HtableAction){NIL, NULL};
+            not_null++;
             break;
         }
         hash = hash_func(key, htable->size, i++);
         cur_item = htable->items[hash];
     }
 
+    result = not_null ? result : (HtableAction){NIL, NULL};
     return result;
 }
-

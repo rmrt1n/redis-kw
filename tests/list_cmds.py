@@ -6,6 +6,7 @@ def test_list_cmds(c):
     test_rpush(c)
     test_lpop(c)
     test_rpop(c)
+    test_llen(c)
     print('all list tests passed')
 
 def test_lpush(c):
@@ -135,4 +136,45 @@ def test_rpop(c):
           'popped from key of wrong type (set)')
     cleanup(c)
     print('\trpop cmd test passed')
+
+def test_llen(c):
+    # check gen
+    check(c, 'lpush a 1 2 3 4 5', '(integer) 5',
+          'failed to lpush values to list')
+    check(c, 'llen a', '(integer) 5',
+          'failed to get correct list length')
+    check(c, 'rpush a "hello world"', '(integer) 1',
+          'failed to rpush spaced string to list')
+    check(c, 'llen a', '(integer) 6',
+          'failed to get correct list length')
+    check(c, 'lpop a', '"5"',
+          'failed to lpop value from list')
+    check(c, 'llen a', '(integer) 5',
+          'failed to get correct list length')
+    check(c, 'del a', '(integer) 1',
+          'failed to delete list key')
+    check(c, 'llen a', '(integer) 0',
+          'got something from deleted list')
+    check(c, 'llen b', '(integer) 0',
+          'got something from non existing list');
+    # check args
+    check(c, 'llen', 'ERR wrong number of arguments (given 0, expected 1)',
+          'failed to recognize syntax error')
+    check(c, 'llen a 2', 'ERR wrong number of arguments (given 2, expected 1)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'hset c 1 2 3 4', '(integer) 2',
+          'failed to hset b 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'llen b', 'ERR wrongtype operation',
+          'got length of key of wrong type (str)')
+    check(c, 'llen c', 'ERR wrongtype operation',
+          'got length of key of wrong type (hash)')
+    check(c, 'llen d', 'ERR wrongtype operation',
+          'got length of key of wrong type (set)')
+    cleanup(c)
+    print('\tllen cmd test passed')
 
