@@ -6,8 +6,8 @@ str cmds:        hash cmds:       list cmds:      set cmds:
 - [x] mset       - [x] hdel       - [x] lpop      - [x] smembers  
 - [x] mget       - [x] hgetall    - [x] rpop      - [x] sismember  
 - [x] incr       - [x] hexists    - [x] llen      - [ ] scard  
-- [x] decr       - [ ] hkeys      - [ ] lindex    - [ ] smismember
-- [x] incrby     - [ ] hvals      - [ ] lpos      - [ ] sdiff
+- [x] decr       - [x] hkeys      - [ ] lindex    - [ ] smismember
+- [x] incrby     - [x] hvals      - [ ] lpos      - [ ] sdiff
 - [x] decrby     - [ ] hlen       - [ ] lset      - [ ] sinter
 - [ ] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
 - [ ] append     - [ ] hmget      - [ ] lrange    - [ ] sdiffstore
