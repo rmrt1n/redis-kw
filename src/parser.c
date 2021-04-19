@@ -108,6 +108,9 @@ Command *parse(char *msg) {
         else if (strcmp(token, "hget") == 0) {type = HGET;}
         else if (strcmp(token, "hdel") == 0) {type = HDEL;}
         else if (strcmp(token, "hgetall") == 0) {type = HGETALL;}
+        else if (strcmp(token, "hexists") == 0) {type = HEXISTS;}
+        else if (strcmp(token, "hkeys") == 0) {type = HKEYS;}
+        else if (strcmp(token, "hvals") == 0) {type = HVALS;}
         else if (strcmp(token, "lpush") == 0) {type = LPUSH;}
         else if (strcmp(token, "lpop") == 0) {type = LPOP;}
         else if (strcmp(token, "rpush") == 0) {type = RPUSH;}

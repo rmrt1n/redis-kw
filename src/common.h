@@ -3,7 +3,7 @@
 
 #define PORT_NUM 6379
 #define SA struct sockaddr
-#define HTABLE_BASE_SIZE 50
+#define HTABLE_BASE_SIZE 2
 
 typedef struct Item {
     enum {STR, HASH, LIST, TSET} type;
@@ -54,7 +54,7 @@ typedef struct Command {
     enum {
         DEL, EXISTS, TYPE,
         SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY,
-        HSET, HGET, HDEL, HGETALL,
+        HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS,
         LPUSH, LPOP, RPUSH, RPOP, LLEN,
         SADD, SREM, SISMEMBER, SMEMBERS,
         QUIT, UNKNOWN, NOOP

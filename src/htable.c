@@ -153,7 +153,7 @@ int hash_func(char *key, int size, int i) {
 }
 
 void htable_add_key(HashTable *htable, int keyhash) {
-    htable->keys = realloc(htable->keys, htable->used);
+    htable->keys = realloc(htable->keys, htable->used * sizeof(int));
     htable->keys[htable->used - 1] = keyhash;
 }
 
@@ -353,7 +353,9 @@ HtableAction htable_hgetall(HashTable *htable, char *key) {
                     vals[id++] = strdup(ht->items[hash]->key);
                     vals[id++] = strdup((char *)ht->items[hash]->value);
                 }
+                vals = realloc(vals, (size + 1) * sizeof(char *));
                 vals[ht->used * 2] = NULL;
+                vals[ht->used * 2 + 1] = NULL; // for hvals
                 result = (HtableAction){OK, vals};
             } else {
                 result = (HtableAction){ERR, NULL};
@@ -666,3 +668,4 @@ HtableAction htable_smembers(HashTable *htable, char *key) {
     result = not_null ? result : (HtableAction){NIL, NULL};
     return result;
 }
+

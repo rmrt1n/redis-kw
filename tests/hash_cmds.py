@@ -6,6 +6,7 @@ def test_hash_cmds(c):
     test_hget(c)
     test_hdel(c)
     test_hgetall(c)
+    test_hexists(c)
     print('all hash cmds passed')
 
 def test_hset(c):
@@ -161,4 +162,44 @@ def test_hgetall(c):
           'got value from key of wrong type (set)')
     cleanup(c)
     print('\thgetall cmd test passed')
+
+def test_hexists(c):
+    # check gen
+    check(c, 'hset a 1 2 2 3 3 4 4 5', '(integer) 4',
+          'failed to hset multiple values to hash')
+    check(c, 'hexists a 1', '(integer) 1',
+          'failed to recognize existing hash key')
+    check(c, 'hset a 1 "hello world"', '(integer) 1',
+          'failed to set existing hash key to str with spaces')
+    check(c, 'hexists a 1', '(integer) 1',
+          'failed to recognize changed hash key')
+    check(c, 'hdel a 1', '(integer) 1',
+          'failed to delete key from hash')
+    check(c, 'hexists a 1', '(integer) 0',
+          'recognized deleted key as existing')
+    check(c, 'hexists a 5', '(integer) 0',
+          'recognized non existing key as existing')
+    # check args
+    check(c, 'hexists', 'ERR wrong number of arguments (given 0, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'hexists a', 'ERR wrong number of arguments (given 1, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'hexists a 1 2',
+          'ERR wrong number of arguments (given 3, expected 2)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'lpush c 1 2', '(integer) 2',
+          'failed to push c 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'hexists b 1', 'ERR wrongtype operation',
+          'got value from key of wrong type (str)')
+    check(c, 'hexists c 1', 'ERR wrongtype operation',
+          'got value from key of wrong type (hash)')
+    check(c, 'hexists d 1', 'ERR wrongtype operation',
+          'got value from key of wrong type (set)')
+    cleanup(c)
+    print('\thexists cmd test passed')
 

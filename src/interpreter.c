@@ -315,6 +315,64 @@ static void exec_hgetall(int client, HashTable *htable, Command *cmd) {
     }
 }
 
+static void exec_hkeys(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction res = htable_hgetall(htable, cmd->argv[0]);
+        char **tmp;
+        int i = 1;
+        switch(res.status) {
+            case OK:
+                tmp = (char **)res.value;
+                while (*tmp != NULL) {
+                    print_numbering(client, i++);
+                    print_quote_encase(client, *tmp);
+                    tmp += 2;
+                }
+                break;
+            case NIL: writeline(client, "(empty list or set)"); break;
+            case ERR: print_status(client, res); break;
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1");
+    }
+}
+
+static void exec_hvals(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 1) {
+        HtableAction res = htable_hgetall(htable, cmd->argv[0]);
+        char **tmp;
+        int i = 1;
+        switch(res.status) {
+            case OK:
+                tmp = (char **)res.value;
+                tmp++;
+                while (*tmp != NULL) {
+                    print_numbering(client, i++);
+                    print_quote_encase(client, *tmp);
+                    tmp += 2;
+                }
+                break;
+            case NIL: writeline(client, "(empty list or set)"); break;
+            case ERR: print_status(client, res); break;
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1");
+    }
+}
+
+static void exec_hexists(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 2) {
+        HtableAction res = htable_hget(htable, cmd->argv[0], cmd->argv[1]);
+        switch (res.status) {
+            case OK: print_integer(client, 1); break;
+            case NIL: print_integer(client, 0); break;
+            case ERR: print_status(client, res); break;
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "2");
+    }
+}
+
 static void exec_hdel(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 1) {
         int oks = 0;
@@ -472,6 +530,9 @@ void execute(int client, HashTable *htable, char *msg) {
         case HGET: exec_hget(client, htable, cmd); break;
         case HDEL: exec_hdel(client, htable, cmd); break;
         case HGETALL: exec_hgetall(client, htable, cmd); break;
+        case HEXISTS: exec_hexists(client, htable, cmd); break;
+        case HKEYS: exec_hkeys(client, htable, cmd); break;
+        case HVALS: exec_hvals(client, htable, cmd); break;
         case LPUSH: exec_push(client, htable, cmd, LEFT); break;
         case LPOP: exec_pop(client, htable, cmd, LEFT); break;
         case RPUSH: exec_push(client, htable, cmd, RIGHT); break;
