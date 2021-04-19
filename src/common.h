@@ -3,7 +3,7 @@
 
 #define PORT_NUM 6379
 #define SA struct sockaddr
-#define HTABLE_BASE_SIZE 128
+#define HTABLE_BASE_SIZE 50
 
 typedef struct Item {
     enum {STR, HASH, LIST, TSET} type;
@@ -69,6 +69,8 @@ int ndigits(int x);
 int isnumber(char *str);
 int strtoi(char *str);
 char *intostr(int n);
+int isprime(int n);
+int next_prime(int n);
 
 // server.c
 int init_server(void);
@@ -89,6 +91,8 @@ void execute(int client_sock, HashTable *htable, char *msg);
 int hash_func(char *key, int size, int i);
 HashTable *htable_init(int size);
 void htable_free(HashTable *htable);
+void htable_resize_up(HashTable *htable);
+void htable_resize_down(HashTable *htable);
 HtableAction htable_set(HashTable *htable, char *key, char *value);
 HtableAction htable_get(HashTable *htable, char *key);
 HtableAction htable_del(HashTable *htable, char *key);

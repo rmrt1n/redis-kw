@@ -24,4 +24,11 @@ def checklines(c, n, inp, expected, msg):
 def cleanup(c):
     c.recvuntil('> ')
     c.sendline('del a b c d');
-    c.recvline()
+    res = c.recvline().strip()[1:].decode('utf-8')
+    c.recvuntil('> ')
+    c.sendline('exists a b c d');
+    res = c.recvline().strip().replace(b'\x00', b'').decode('utf-8')
+    if res != '(integer) 0':
+        print('cleanup failed')
+        exit(1)
+

@@ -76,10 +76,14 @@ static int get_argc(Parser *parser) {
 
 Parser *parser_init(char *msg) {
     Parser *parser = malloc(sizeof(parser));
-    parser->string = msg;
+    parser->string = strdup(msg);
     parser->pos = 0;
     parser->current_char = msg[0];
     return parser;
+}
+
+void parser_free(Parser *parser) {
+    free_all(2, parser->string, parser);
 }
 
 Command *parse(char *msg) {
@@ -128,7 +132,7 @@ Command *parse(char *msg) {
         cmd = command_init(NOOP, 0, NULL);
     }
 
-    free_all(2, parser, token);
+    free_all(3, parser->string, parser, token);
     return cmd;
 }
 

@@ -57,7 +57,7 @@ void close_connection(int sockfd) {
 }
 
 char *readline(int client) {
-    char *msg = malloc(1024);
+    char *msg = calloc(1024, 1);
     read(client, msg, 1024);
     msg[strlen(msg) - 1] = '\0';
     return msg;
@@ -67,7 +67,7 @@ void writeline(int client, char *msg) {
     char *tmp = malloc(strlen(msg) + 2);
     sprintf(tmp, "%s\n", msg);
     write(client, tmp, strlen(tmp) + 1);
-    free(tmp);
+    free_all(1, tmp);
 }
 
 void repl(int client, HashTable *htable) {
@@ -78,7 +78,7 @@ void repl(int client, HashTable *htable) {
         msg = readline(client);
         execute(client, htable, msg);
 
-        free(msg);
+        free_all(1, msg);
     }
 }
 

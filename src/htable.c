@@ -7,10 +7,10 @@ Item HTABLE_DELETED = {0, NULL, NULL};
 
 HashTable *htable_init(int size) {
     HashTable *htable = malloc(sizeof(HashTable));
-    htable->size = size;
+    htable->size = next_prime(size);
     htable->used = 0;
     htable->keys = calloc(1, sizeof(int));
-    htable->items = calloc(size, sizeof(Item *));
+    htable->items = calloc(htable->size, sizeof(Item *));
     return htable;
 }
 
@@ -62,15 +62,75 @@ void htable_free(HashTable *htable) {
     free_all(3, htable->keys, htable->items, htable);
 }
 
-// void htable_resize(HashTable *htable, int new_size) {
-    // if (new_size < HTABLE_BASE_SIZE) return;
+void htable_resize(HashTable *htable, int new_size) {
+    if (new_size < HTABLE_BASE_SIZE) return;
 
-    // HashTable *new_htable = htable_init(new_size);
-    // for (int i = 0; i < htable->used; i++) {
-        // Item *tmp = htable->items[htable->keys[i]];
-        // htable_set_str()
-    // }
-// }
+    HashTable *new_ht = htable_init(new_size);
+    for (int i = 0; i < htable->used; i++) {
+        Item *tmp = htable->items[htable->keys[i]];
+        switch (tmp->type) {
+            case STR:
+                htable_set(new_ht, tmp->key, (char *)tmp->value);
+                break;
+            case HASH:;
+                HashTable *tmp_ht = (HashTable *) tmp->value;
+                for (int j = 0; j < tmp_ht->used; j++) {
+                    Item *tmp_itm = tmp_ht->items[tmp_ht->keys[j]];
+                    htable_hset(new_ht, tmp->key,
+                                tmp_itm->key, (char *)tmp_itm->value);
+                }
+                break;
+            case LIST:;
+                List *tmp_ls = (List *) tmp->value;
+                Node *tmp_nd = tmp_ls->head;
+                while (tmp_nd != NULL) {
+                    htable_push(new_ht, tmp->key, tmp_nd->value, LEFT);
+                    tmp_nd = tmp_nd->next;
+                }
+                break;
+            case TSET:;
+                Set *tmp_st = (Set *) tmp->value;
+                for (int i = 0; i < tmp_st->used; i++) {
+                    char *tmp_m = (char *)tmp_st->members[tmp_st->keys[i]];
+                    htable_sadd(new_ht, tmp->key, tmp_m);
+                }
+                break;
+        }
+    }
+    
+    // swap size
+    int tmp_size = htable->size;
+    htable->size = new_ht->size;
+    new_ht->size = tmp_size;
+
+    // swap keys
+    int *tmp_keys = htable->keys;
+    htable->keys = new_ht->keys;
+    new_ht->keys = tmp_keys;
+
+    // swap items
+    Item **tmp_itms = htable->items;
+    htable->items = new_ht->items;
+    new_ht->items = tmp_itms;
+
+    htable_free(new_ht);
+}
+
+void htable_resize_up(HashTable *htable) {
+    int load = htable->used * 100 / htable->size;
+    if (load > 70) {
+        int new_size = htable->size * 2;
+        htable_resize(htable, new_size);
+    }
+}
+
+void htable_resize_down(HashTable *htable) {
+    int load = htable->used * 100 / htable->size;
+    if (load < 10) {
+        int new_size = htable->size / 2;
+        htable_resize(htable, new_size);
+    }
+}
 
 int djb2(char *str, int size) {
     unsigned long hash = 5381;
@@ -132,6 +192,7 @@ HashTable *get_ht_ref(HashTable *htable, char *key) {
 }
 
 HtableAction htable_set(HashTable *htable, char *key, char *value) {
+    htable_resize_up(htable);
     Item *new_item = item_init(STR, key, value);
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
@@ -182,6 +243,7 @@ HtableAction htable_get(HashTable *htable, char *key) {
 }
 
 HtableAction htable_del(HashTable *htable, char *key) {
+    htable_resize_down(htable);
     HtableAction result;
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
@@ -210,6 +272,7 @@ HtableAction htable_del(HashTable *htable, char *key) {
 }
 
 HtableAction htable_hset(HashTable *htable, char *key, char *field, char *value) {
+    htable_resize_up(htable);
     HtableAction result;
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
@@ -383,6 +446,7 @@ HtableAction htable_type(HashTable *htable, char *key) {
 
 
 HtableAction htable_push(HashTable *htable, char *key, char *value, int dir) {
+    htable_resize_up(htable);
     HtableAction result;
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];
@@ -480,6 +544,7 @@ HtableAction htable_llen(HashTable *htable, char *key) {
 }
 
 HtableAction htable_sadd(HashTable *htable, char *key, char *value) {
+    htable_resize_up(htable);
     HtableAction result;
     int hash = hash_func(key, htable->size, 0);
     Item *cur_item = htable->items[hash];

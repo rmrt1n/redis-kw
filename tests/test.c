@@ -256,7 +256,32 @@ char *test_set_cmds() {
     return 0;
 }
 
+char *test_resizing() {
+    HashTable *ht = htable_init(HTABLE_BASE_SIZE);
+    mu_assert("ht not initialized to size 5", ht->size == 5);
+
+    // add until load > 0.7
+    htable_set(ht, "a", "1");
+    htable_set(ht, "b", "2");
+    htable_set(ht, "c", "2");
+    htable_set(ht, "d", "4");
+    htable_set(ht, "e", "4");
+    mu_assert("ht not resized up", ht->size == 11);
+
+    htable_del(ht, "e");
+    htable_del(ht, "d");
+    htable_del(ht, "c");
+    htable_del(ht, "b");
+    htable_del(ht, "a");
+    mu_assert("ht not resized down", ht->size == 5);
+    // htable_resize_up(ht);
+
+    htable_free(ht);
+    return 0;
+}
+
 char *test_all() {
+    mu_run_test(test_resizing);
     mu_run_test(test_htable);
     mu_run_test(test_string_cmds);
     mu_run_test(test_hash_cmds);

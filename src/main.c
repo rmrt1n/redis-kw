@@ -3,7 +3,7 @@
 #include "common.h"
 
 int main() {
-    HashTable *htable = htable_init(4096);
+    HashTable *htable = htable_init(HTABLE_BASE_SIZE);
 
     // start server
     int sockfd = init_server();
@@ -16,3 +16,4 @@ int main() {
     
     return 0;
 }
+

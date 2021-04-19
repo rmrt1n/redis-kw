@@ -28,14 +28,14 @@ def test_set(c):
     # check type
     check(c, 'hset b 1 2', '(integer) 1',
           'failed to hset a 1 to 2')
-    check(c, 'set b hash', 'OK',
-          'failed to change hash to str')
     check(c, 'lpush c 1', '(integer) 1',
           'failed to push to list')
-    check(c, 'set c list', 'OK',
-          'failed to change list to str')
     check(c, 'sadd d 1', '(integer) 1',
           'failed to add 1 to set')
+    check(c, 'set b hash', 'OK',
+          'failed to change hash to str')
+    check(c, 'set c list', 'OK',
+          'failed to change list to str')
     check(c, 'set d set', 'OK',
           'failed to change set to str')
     cleanup(c)
@@ -96,7 +96,7 @@ def test_mset(c):
           'failed to del str key')
     check(c, 'mset a 3', 'OK',
           'failed to mset value of deleted str key')
-    check(c, 'mset c "hellow rodl"', 'OK',
+    check(c, 'mset c "hellow sladkjflaksjflkasj"', 'OK',
           'failed to mset str with spaces')
     # check args
     check(c, 'mset', 'ERR wrong number of arguments for \'mset\'',

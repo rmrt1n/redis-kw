@@ -4,6 +4,13 @@
 #include <unistd.h>
 #include "common.h"
 
+static void free_cmd(Command *cmd) {
+    for (int i = 0; i < cmd->argc; i++) {
+        free_all(1, cmd->argv[i]);
+    }
+    free_all(2, cmd->argv, cmd);
+}
+
 static void print_status(int client, HtableAction action) {
     switch (action.status) {
         case OK: writeline(client, "OK"); break;
@@ -76,7 +83,7 @@ static void exec_get(int client, HashTable *htable, Command *cmd) {
 
 static void exec_mset(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc >= 2 && cmd->argc % 2 == 0) {
-        for (int i = 0; i < cmd->argc; i+= 2) {
+        for (int i = 0; i < cmd->argc; i += 2) {
             htable_set(htable, cmd->argv[i], cmd->argv[i+1]);
         }
         writeline(client, "OK");
@@ -478,6 +485,6 @@ void execute(int client, HashTable *htable, char *msg) {
         case QUIT: exit(0); break;
         case NOOP: break;
     }
-    free_all(2, cmd->argv, cmd);
+    free_cmd(cmd);
 }
 
