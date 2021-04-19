@@ -1,0 +1,27 @@
+cmds list:
+---
+str cmds:        hash cmds:       list cmds:      set cmds:  
+- [x] set        - [x] hset       - [x] lpush     - [x] sadd 
+- [x] get        - [x] hget       - [x] rpush     - [x] srem 
+- [x] mset       - [x] hdel       - [x] lpop      - [x] smembers  
+- [x] mget       - [x] hgetall    - [x] rpop      - [x] sismember  
+- [x] incr       - [ ] hexists    - [x] llen      - [ ] scard  
+- [x] decr       - [ ] hkeys      - [ ] lindex    - [ ] smismember
+- [x] incrby     - [ ] hvals      - [ ] lpos      - [ ] sdiff
+- [x] decrby     - [ ] hlen       - [ ] lset      - [ ] sinter
+- [ ] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
+- [ ] append     - [ ] hmget      - [ ] lrange    - [ ] sdiffstore
+- [ ] setrange   - [ ] hstrlen    - [ ] lpushx    - [ ] sinterstore
+- [ ] getrange   - [ ] hsetnx     - [ ] rpushx    - [ ] sunionstore
+- [ ] setnx      - [ ]            - [ ] ltrim     - [ ]
+- [ ] msetnx                      - [ ]           
+- [ ] 
+
+
+keys cmds:      etc:
+- [x] del       - [x] ping
+- [x] exists    - [x] quit
+- [x] type      - [ ] 
+- [ ] rename
+- [ ]
+
