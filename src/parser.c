@@ -93,35 +93,36 @@ Command *parse(char *msg) {
     Command *cmd;
     if (argc >= 0) {
         int type;
-        if (strcmp(token, "del") == 0) {type = DEL;}
-        else if (strcmp(token, "exists") == 0) {type = EXISTS;}
-        else if (strcmp(token, "type") == 0) {type = TYPE;}
-        else if (strcmp(token, "set") == 0) {type = SET;}
-        else if (strcmp(token, "get") == 0) {type = GET;}
-        else if (strcmp(token, "mset") == 0) {type = MSET;}
-        else if (strcmp(token, "mget") == 0) {type = MGET;}
-        else if (strcmp(token, "incr") == 0) {type = INCR;}
-        else if (strcmp(token, "decr") == 0) {type = DECR;}
-        else if (strcmp(token, "incrby") == 0) {type = INCRBY;}
-        else if (strcmp(token, "decrby") == 0) {type = DECRBY;}
-        else if (strcmp(token, "hset") == 0) {type = HSET;}
-        else if (strcmp(token, "hget") == 0) {type = HGET;}
-        else if (strcmp(token, "hdel") == 0) {type = HDEL;}
-        else if (strcmp(token, "hgetall") == 0) {type = HGETALL;}
-        else if (strcmp(token, "hexists") == 0) {type = HEXISTS;}
-        else if (strcmp(token, "hkeys") == 0) {type = HKEYS;}
-        else if (strcmp(token, "hvals") == 0) {type = HVALS;}
-        else if (strcmp(token, "lpush") == 0) {type = LPUSH;}
-        else if (strcmp(token, "lpop") == 0) {type = LPOP;}
-        else if (strcmp(token, "rpush") == 0) {type = RPUSH;}
-        else if (strcmp(token, "llen") == 0) {type = LLEN;}
-        else if (strcmp(token, "rpop") == 0) {type = RPOP;}
-        else if (strcmp(token, "sadd") == 0) {type = SADD;}
-        else if (strcmp(token, "srem") == 0) {type = SREM;}
-        else if (strcmp(token, "sismember") == 0) {type = SISMEMBER;}
-        else if (strcmp(token, "smembers") == 0) {type = SMEMBERS;}
-        else if (strcmp(token, "quit") == 0) {type = QUIT;}
-        else {type = UNKNOWN;}
+        if (strcmp(token, "del") == 0) type = DEL;
+        else if (strcmp(token, "exists") == 0) type = EXISTS;
+        else if (strcmp(token, "type") == 0) type = TYPE;
+        else if (strcmp(token, "set") == 0) type = SET;
+        else if (strcmp(token, "get") == 0) type = GET;
+        else if (strcmp(token, "mset") == 0) type = MSET;
+        else if (strcmp(token, "mget") == 0) type = MGET;
+        else if (strcmp(token, "incr") == 0) type = INCR;
+        else if (strcmp(token, "decr") == 0) type = DECR;
+        else if (strcmp(token, "incrby") == 0) type = INCRBY;
+        else if (strcmp(token, "decrby") == 0) type = DECRBY;
+        else if (strcmp(token, "hset") == 0) type = HSET;
+        else if (strcmp(token, "hget") == 0) type = HGET;
+        else if (strcmp(token, "hdel") == 0) type = HDEL;
+        else if (strcmp(token, "hgetall") == 0) type = HGETALL;
+        else if (strcmp(token, "hexists") == 0) type = HEXISTS;
+        else if (strcmp(token, "hkeys") == 0) type = HKEYS;
+        else if (strcmp(token, "hvals") == 0) type = HVALS;
+        else if (strcmp(token, "hmget") == 0) type = HMGET;
+        else if (strcmp(token, "lpush") == 0) type = LPUSH;
+        else if (strcmp(token, "lpop") == 0) type = LPOP;
+        else if (strcmp(token, "rpush") == 0) type = RPUSH;
+        else if (strcmp(token, "llen") == 0) type = LLEN;
+        else if (strcmp(token, "rpop") == 0) type = RPOP;
+        else if (strcmp(token, "sadd") == 0) type = SADD;
+        else if (strcmp(token, "srem") == 0) type = SREM;
+        else if (strcmp(token, "sismember") == 0) type = SISMEMBER;
+        else if (strcmp(token, "smembers") == 0) type = SMEMBERS;
+        else if (strcmp(token, "quit") == 0) type = QUIT;
+        else type = UNKNOWN;
         
         // parse arguments
         char **args = malloc(argc * sizeof(char *));

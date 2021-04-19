@@ -9,6 +9,7 @@ def test_hash_cmds(c):
     test_hexists(c)
     test_hkeys(c)
     test_hvals(c)
+    test_hmget(c)
     print('all hash cmds passed')
 
 def test_hset(c):
@@ -287,4 +288,40 @@ def test_hvals(c):
           'got something from key of wrong type (set)')
     cleanup(c)
     print('\thvals cmd test passed')
+
+def test_hmget(c):
+    # check gen
+    check(c, 'hset a a 1 b 2 c 3 d 4 e 5', '(integer) 5',
+          'failed to hset multiple values to empty hash')
+    checklines(c, 1, 'hmget a a', ['1) "1"'],
+               'failed to get 1 value from hash key')
+    checklines(c, 1, 'hmget a a b c', ['1) "1"', '2) "2"', '3) "3"'],
+               'failed to get multiple values from hash')
+    checklines(c, 1, 'hmget a a',
+               ['1) "1"', '2) "2"', '3) "3"', '4) "4"', '5) "5"'],
+               'failed to get all values from hash')
+    check(c, 'hset a a 2 b 3 c 4', '(integer) 3',
+          'failed to change multiple values from hash')
+    checklines(c, 1, 'hmget a a b c', ['1) "2"', '2) "3"', '3) "4"'],
+               'failed to get multiple values from hash with changed values')
+    # check args
+    check(c, 'hmget', 'ERR wrong number of arguments (given 0, expected 1+)',
+          'failed to recognize syntax error')
+    check(c, 'hmget a', 'ERR wrong number of arguments (given 1, expected 1+)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'lpush c 1 2', '(integer) 2',
+          'failed to push c 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'hmget b 1', 'ERR wrongtype operation',
+          'got something from key of wrong type (str)')
+    check(c, 'hmget c 1', 'ERR wrongtype operation',
+          'got something from key of wrong type (hash)')
+    check(c, 'hmget d 1', 'ERR wrongtype operation',
+          'got something from key of wrong type (set)')
+    cleanup(c)
+    print('\thmget cmd test passed')
 

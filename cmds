@@ -10,7 +10,7 @@ str cmds:        hash cmds:       list cmds:      set cmds:
 - [x] incrby     - [x] hvals      - [ ] lpos      - [ ] sdiff
 - [x] decrby     - [ ] hlen       - [ ] lset      - [ ] sinter
 - [ ] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
-- [ ] append     - [ ] hmget      - [ ] lrange    - [ ] sdiffstore
+- [ ] append     - [x] hmget      - [ ] lrange    - [ ] sdiffstore
 - [ ] setrange   - [ ] hstrlen    - [ ] lpushx    - [ ] sinterstore
 - [ ] getrange   - [ ] hsetnx     - [ ] rpushx    - [ ] sunionstore
 - [ ] setnx      - [ ]            - [ ] ltrim     - [ ]
