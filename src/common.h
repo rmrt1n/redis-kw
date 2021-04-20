@@ -56,7 +56,7 @@ typedef struct Command {
         SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY,
         HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET,
         LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX,
-        SADD, SREM, SISMEMBER, SMEMBERS,
+        SADD, SREM, SISMEMBER, SMEMBERS, SMISMEMBER,
         QUIT, UNKNOWN, NOOP
     } type;
     int argc;

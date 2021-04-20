@@ -395,7 +395,7 @@ static void exec_hmget(int client, HashTable *htable, Command *cmd) {
         for (int i = 1; i < cmd->argc; i++) {
             HtableAction res = htable_hget(htable, cmd->argv[0], cmd->argv[i]);
             switch (res.status) {
-                case OK: 
+                case OK:
                     print_numbering(client, i);
                     print_quote_encase(client, res.value);
                     break;
@@ -545,6 +545,30 @@ static void exec_smembers(int client, HashTable *htable, Command *cmd) {
     }
 }
 
+static void exec_smismember(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc > 1) {
+        for (int i = 1; i < cmd->argc; i++) {
+            HtableAction res = htable_sismember(htable,
+                                                cmd->argv[0], cmd->argv[i]);
+            switch (res.status) {
+                case OK: 
+                    print_numbering(client, i);
+                    print_integer(client, 1);
+                    break;
+                case NIL:
+                    print_numbering(client, i);
+                    print_integer(client, 0);
+                    break;
+                case ERR:
+                    print_status(client, res);
+                    return;
+                    break;
+            }
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "1+");
+    }
+}
 static void exec_unknown(int client) {
     writeline(client, "ERR unrecognized command");
 }
@@ -581,6 +605,7 @@ void execute(int client, HashTable *htable, char *msg) {
         case SREM: exec_srem(client, htable, cmd); break;
         case SISMEMBER: exec_sismember(client, htable, cmd); break;
         case SMEMBERS: exec_smembers(client, htable, cmd); break;
+        case SMISMEMBER: exec_smismember(client, htable, cmd); break;
         case UNKNOWN: exec_unknown(client); break;
         case QUIT: exit(0); break;
         case NOOP: break;

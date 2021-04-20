@@ -6,6 +6,7 @@ def test_set_cmds(c):
     test_srem(c)
     test_sismember(c)
     test_smembers(c)
+    test_smismember(c)
     print('all set cmds passed')
 
 def test_sadd(c):
@@ -148,4 +149,49 @@ def test_smembers(c):
           'got something from key of wrong type (list)')
     cleanup(c)
     print('\tsmembers cmd test passed')
+
+def test_smismember(c):
+    # check gen
+    check(c, 'sadd a 1 2 3 4 5', '(integer) 5',
+          'failed to add value to empty set')
+    checklines(c, 1, 'smismember a 1', ['1) (integer) 1'],
+               'failed to get 1 member of set')
+    checklines(c, 2, 'smismember a 1 2',
+               ['1) (integer) 1', '2) (integer) 1'],
+               'failed to get 2 member of set')
+    checklines(c, 3, 'smismember a 1 2 0',
+               ['1) (integer) 1', '2) (integer) 1', '3) (integer) 0'],
+               'failed to get 2 member of set & 1 non member')
+    check(c, 'srem a 1', '(integer) 1',
+          'failed to delete value from set')
+    checklines(c, 1, 'smismember a 1', ['1) (integer) 0'],
+               'got something from deleted set member')
+    check(c, 'del a', '(integer) 1',
+          'failed to delete set')
+    checklines(c, 1, 'smismember a 1', ['1) (integer) 0'],
+               'got something from deleted set')
+    checklines(c, 1, 'smismember b 1', ['1) (integer) 0'],
+               'got something from non existing key')
+    # check args
+    check(c, 'smismember',
+           'ERR wrong number of arguments (given 0, expected 1+)',
+          'failed to recognize syntax error')
+    check(c, 'smismember a',
+           'ERR wrong number of arguments (given 1, expected 1+)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'hset c 1 2 3 4', '(integer) 2',
+          'failed to hset b 1 to 2, 3 to 4')
+    check(c, 'lpush d 1 2', '(integer) 2',
+          'failed to lpush 2 values')
+    checklines(c, 1, 'smismember b 1', ['ERR wrongtype operation'],
+               'got something from key of wrong type (str)')
+    checklines(c, 1, 'smismember c 1', ['ERR wrongtype operation'],
+               'got something from key of wrong type (hash)')
+    checklines(c, 1, 'smismember d 1', ['ERR wrongtype operation'],
+               'got something from key of wrong type (list)')
+    cleanup(c)
+    print('\tsmismember cmd test passed')
 
