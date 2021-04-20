@@ -55,7 +55,7 @@ typedef struct Command {
         DEL, EXISTS, TYPE,
         SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY,
         HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET,
-        LPUSH, LPOP, RPUSH, RPOP, LLEN,
+        LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX,
         SADD, SREM, SISMEMBER, SMEMBERS,
         QUIT, UNKNOWN, NOOP
     } type;
@@ -71,6 +71,7 @@ int strtoi(char *str);
 char *intostr(int n);
 int isprime(int n);
 int next_prime(int n);
+int index_correcter(int index, int llen);
 
 // server.c
 int init_server(void);
@@ -105,6 +106,7 @@ HtableAction htable_hdel(HashTable *htable, char *key, char *field);
 HtableAction htable_push(HashTable *htable, char *key, char *value, int dir);
 HtableAction htable_pop(HashTable *htable, char *key, int dir);
 HtableAction htable_llen(HashTable *htable, char *key);
+HtableAction htable_lindex(HashTable *htable, char *key, char *index);
 HtableAction htable_sadd(HashTable *htable, char *key, char *value);
 HtableAction htable_srem(HashTable *htable, char *key, char *value);
 HtableAction htable_sismember(HashTable *htable, char *key, char *value);
@@ -117,6 +119,7 @@ void list_node_free(Node *node);
 void list_free(List *list);
 void list_push(List *list, char *value, int direction);
 Node *list_pop(List *list, int direction);
+Node *list_index(List *list, int index);
 
 // set.c
 Set *set_init(int size);

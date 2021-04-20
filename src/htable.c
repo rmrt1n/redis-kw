@@ -545,6 +545,38 @@ HtableAction htable_llen(HashTable *htable, char *key) {
     return result;
 }
 
+HtableAction htable_lindex(HashTable *htable, char *key, char *index) {
+    HtableAction result;
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+
+    int i = 1, not_null = 0;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            if (cur_item->type == LIST) {
+                List *tmp = (List *)cur_item->value;
+                int id = index_correcter(strtoi(index), tmp->len);
+                Node *node = list_index(tmp, id);
+                if (node != NULL) {
+                    result.status = OK;
+                    result.value = strdup(node->value);
+                } else {
+                    result = (HtableAction){NIL, NULL};
+                }
+            } else {
+                result = (HtableAction){ERR, NULL};
+            }
+            not_null++;
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+    
+    result = not_null ? result : (HtableAction){NIL, NULL};
+    return result;
+}
+
 HtableAction htable_sadd(HashTable *htable, char *key, char *value) {
     htable_resize_up(htable);
     HtableAction result;

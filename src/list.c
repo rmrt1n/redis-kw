@@ -98,3 +98,10 @@ Node *list_pop(List *list, int direction) {
     return direction == LEFT ? list_lpop(list) : list_rpop(list);
 }
 
+Node *list_index(List *list, int index) {
+    int id = 0;
+    Node *node = list->head;
+    while (id++ < index && node != NULL) node = node->next;
+    return node;
+}
+

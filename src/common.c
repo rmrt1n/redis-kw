@@ -69,3 +69,7 @@ int next_prime(int n) {
     return x;
 }
 
+int index_correcter(int index, int llen) {
+    return index < 0 ? llen + index : index;
+}
+

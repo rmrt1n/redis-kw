@@ -116,6 +116,7 @@ Command *parse(char *msg) {
         else if (strcmp(token, "lpop") == 0) type = LPOP;
         else if (strcmp(token, "rpush") == 0) type = RPUSH;
         else if (strcmp(token, "llen") == 0) type = LLEN;
+        else if (strcmp(token, "lindex") == 0) type = LINDEX;
         else if (strcmp(token, "rpop") == 0) type = RPOP;
         else if (strcmp(token, "sadd") == 0) type = SADD;
         else if (strcmp(token, "srem") == 0) type = SREM;

@@ -463,6 +463,19 @@ static void exec_llen(int client, HashTable *htable, Command *cmd) {
     }
 }
 
+static void exec_lindex(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 2) {
+        HtableAction res = htable_lindex(htable, cmd->argv[0], cmd->argv[1]);
+        if (res.status == OK) {
+            print_quote_encase(client, res.value);
+        } else {
+            print_status(client, res);
+        }
+    } else {
+        print_wrong_argc(client, cmd->argc, "2");
+    }
+}
+
 static void exec_sadd(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 1) {
         int oks = 0;
@@ -563,6 +576,7 @@ void execute(int client, HashTable *htable, char *msg) {
         case RPUSH: exec_push(client, htable, cmd, RIGHT); break;
         case RPOP: exec_pop(client, htable, cmd, RIGHT); break;
         case LLEN: exec_llen(client, htable, cmd); break;
+        case LINDEX: exec_lindex(client, htable, cmd); break;
         case SADD: exec_sadd(client, htable, cmd); break;
         case SREM: exec_srem(client, htable, cmd); break;
         case SISMEMBER: exec_sismember(client, htable, cmd); break;

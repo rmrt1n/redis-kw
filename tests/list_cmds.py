@@ -7,6 +7,7 @@ def test_list_cmds(c):
     test_lpop(c)
     test_rpop(c)
     test_llen(c)
+    test_lindex(c)
     print('all list tests passed')
 
 def test_lpush(c):
@@ -21,14 +22,14 @@ def test_lpush(c):
     # check type
     check(c, 'set b hello', 'OK',
           'failed to set b to hello')
-    check(c, 'lpush b 1', 'ERR wrongtype operation',
-          'lpushed value to wrongtype key (str)')
     check(c, 'hset c 1 2 3 4', '(integer) 2',
           'failed to hset b 1 to 2, 3 to 4')
-    check(c, 'lpush c 2', 'ERR wrongtype operation',
-          'lpushed value to wrongtype key (hash)')
     check(c, 'sadd d 1 2 3', '(integer) 3',
           'failed to add to set d, 1 2 3')
+    check(c, 'lpush b 1', 'ERR wrongtype operation',
+          'lpushed value to wrongtype key (str)')
+    check(c, 'lpush c 2', 'ERR wrongtype operation',
+          'lpushed value to wrongtype key (hash)')
     check(c, 'lpush d 2 2', 'ERR wrongtype operation',
           'lpushed value to wrongtype key (set)')
     cleanup(c)
@@ -177,4 +178,50 @@ def test_llen(c):
           'got length of key of wrong type (set)')
     cleanup(c)
     print('\tllen cmd test passed')
+
+def test_lindex(c):
+    # check gen
+    check(c, 'lpush a 1 2 3 4 5', '(integer) 5',
+          'failed to init new list key')
+    check(c, 'lindex a 0', '"5"',
+          'failed to get item from index 0 from list')
+    check(c, 'lindex a 2', '"3"',
+          'failed to get item from index 2 from list')
+    check(c, 'lindex a 4', '"1"',
+          'failed to get item from index 4 from list')
+    check(c, 'lindex a -1', '"1"',
+          'failed to get item from negative index -1 from list')
+    check(c, 'lindex a -3', '"3"',
+          'failed to get item from negative index -3 from list')
+    check(c, 'lindex a 9', '(nil)',
+          'got something from out of range index')
+    check(c, 'del a', '(integer) 1',
+          'failed to delete list')
+    check(c, 'lindex a 1', '(nil)',
+          'got something from deleted key');
+    check(c, 'lindex b 1', '(nil)',
+          'got something from non existing key')
+    # check args
+    check(c, 'lindex', 'ERR wrong number of arguments (given 0, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'lindex a', 'ERR wrong number of arguments (given 1, expected 2)',
+          'failed to recognize syntax error')
+    check(c, 'lindex a 1 2',
+          'ERR wrong number of arguments (given 3, expected 2)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'hset c 1 2 3 4', '(integer) 2',
+          'failed to hset b 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'lindex b 1', 'ERR wrongtype operation',
+          'got something from key of wrong type (str)')
+    check(c, 'lindex c 1', 'ERR wrongtype operation',
+          'got something from key of wrong type (hash)')
+    check(c, 'lindex d 1', 'ERR wrongtype operation',
+          'got something from key of wrong type (set)')
+    cleanup(c)
+    print('\tlindex cmd test passed')
 
