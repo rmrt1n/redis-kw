@@ -104,6 +104,7 @@ Command *parse(char *msg) {
         else if (strcmp(token, "decr") == 0) type = DECR;
         else if (strcmp(token, "incrby") == 0) type = INCRBY;
         else if (strcmp(token, "decrby") == 0) type = DECRBY;
+        else if (strcmp(token, "strlen") == 0) type = STRLEN;
         else if (strcmp(token, "hset") == 0) type = HSET;
         else if (strcmp(token, "hget") == 0) type = HGET;
         else if (strcmp(token, "hdel") == 0) type = HDEL;
@@ -112,11 +113,13 @@ Command *parse(char *msg) {
         else if (strcmp(token, "hkeys") == 0) type = HKEYS;
         else if (strcmp(token, "hvals") == 0) type = HVALS;
         else if (strcmp(token, "hmget") == 0) type = HMGET;
+        else if (strcmp(token, "hlen") == 0) type = HLEN;
         else if (strcmp(token, "lpush") == 0) type = LPUSH;
         else if (strcmp(token, "lpop") == 0) type = LPOP;
         else if (strcmp(token, "rpush") == 0) type = RPUSH;
         else if (strcmp(token, "llen") == 0) type = LLEN;
         else if (strcmp(token, "lindex") == 0) type = LINDEX;
+        else if (strcmp(token, "lrange") == 0) type = LRANGE;
         else if (strcmp(token, "rpop") == 0) type = RPOP;
         else if (strcmp(token, "sadd") == 0) type = SADD;
         else if (strcmp(token, "srem") == 0) type = SREM;

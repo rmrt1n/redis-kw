@@ -19,7 +19,7 @@ typedef struct HashTable {
 } HashTable;
 
 typedef struct HtableAction{
-    enum {OK, NIL, ERR} status;
+    enum {OK, NIL, TYPERR, IDERR} status;
     void *value;
 } HtableAction;
 
@@ -53,9 +53,9 @@ typedef struct Parser {
 typedef struct Command {
     enum {
         DEL, EXISTS, TYPE,
-        SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY,
-        HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET,
-        LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX,
+        SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY, STRLEN,
+        HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET, HLEN,
+        LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX, LRANGE,
         SADD, SREM, SISMEMBER, SMEMBERS, SMISMEMBER,
         QUIT, UNKNOWN, NOOP
     } type;
@@ -103,10 +103,12 @@ HtableAction htable_hset(HashTable *htable, char *key, char *field, char *value)
 HtableAction htable_hget(HashTable *htable, char *key, char *field);
 HtableAction htable_hgetall(HashTable *htable, char *key);
 HtableAction htable_hdel(HashTable *htable, char *key, char *field);
+HtableAction htable_hlen(HashTable *htable, char *key);
 HtableAction htable_push(HashTable *htable, char *key, char *value, int dir);
 HtableAction htable_pop(HashTable *htable, char *key, int dir);
 HtableAction htable_llen(HashTable *htable, char *key);
 HtableAction htable_lindex(HashTable *htable, char *key, char *index);
+HtableAction htable_lrange(HashTable *htable, char *key, char *start, char *stop);
 HtableAction htable_sadd(HashTable *htable, char *key, char *value);
 HtableAction htable_srem(HashTable *htable, char *key, char *value);
 HtableAction htable_sismember(HashTable *htable, char *key, char *value);
@@ -120,6 +122,7 @@ void list_free(List *list);
 void list_push(List *list, char *value, int direction);
 Node *list_pop(List *list, int direction);
 Node *list_index(List *list, int index);
+char **list_range(List *list, int start, int end);
 
 // set.c
 Set *set_init(int size);

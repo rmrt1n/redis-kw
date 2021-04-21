@@ -10,6 +10,7 @@ def test_hash_cmds(c):
     test_hkeys(c)
     test_hvals(c)
     test_hmget(c)
+    test_hlen(c)
     print('all hash cmds passed')
 
 def test_hset(c):
@@ -324,4 +325,45 @@ def test_hmget(c):
           'got something from key of wrong type (set)')
     cleanup(c)
     print('\thmget cmd test passed')
+
+def test_hlen(c):
+    # check gen
+    check(c, 'hset a a 1 b 2 c 3 d 4 e 5', '(integer) 5',
+          'failed to hset multiple values to empty hash')
+    check(c, 'hlen a', '(integer) 5',
+          'failed to get correct hash num')
+    check(c, 'hset a f 6', '(integer) 1',
+          'failed to set new value to hash')
+    check(c, 'hlen a', '(integer) 6',
+          'failed to get correct hash num')
+    check(c, 'hdel a a b', '(integer) 2',
+          'failed to delete values from hash')
+    check(c, 'hlen a', '(integer) 4',
+          'failed to get correct hash num')
+    check(c, 'del a', '(integer) 1',
+          'failed to delete hash')
+    check(c, 'hlen a', '(integer) 0',
+          'got something from deleted hash')
+    check(c, 'hlen a', '(integer) 0',
+          'got something from non existing key')
+    # check args
+    check(c, 'hlen', 'ERR wrong number of arguments (given 0, expected 1)',
+          'failed to recognize syntax error')
+    check(c, 'hlen a 1', 'ERR wrong number of arguments (given 2, expected 1)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'lpush c 1 2', '(integer) 2',
+          'failed to push c 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'hlen b', 'ERR wrongtype operation',
+          'got something from key of wrong type (str)')
+    check(c, 'hlen c', 'ERR wrongtype operation',
+          'got something from key of wrong type (hash)')
+    check(c, 'hlen d', 'ERR wrongtype operation',
+          'got something from key of wrong type (set)')
+    cleanup(c)
+    print('\thlen cmd test passed')
 

@@ -225,3 +225,52 @@ def test_lindex(c):
     cleanup(c)
     print('\tlindex cmd test passed')
 
+def test_lpush(c):
+    # check gen
+    check(c, 'lpush a 5 4 3 2 1', '(integer) 5',
+          'failed to init new list key')
+    checklines(c, 1, 'lrange a 0 0', ['1) "1"'],
+          'failed to get first item of list')
+    checklines(c, 3, 'lrange a 0 2', ['1) "1"', '2) "2"', '3) "3"'],
+          'failed to get range of items')
+    checklines(c, 5, 'lrange a 0 -1',
+          ['1) "1"', '2) "2"', '3) "3"', '4) "4"', '5) "5"'],
+          'failed to get range with a negative index')
+    checklines(c, 2, 'lrange a -2 -1', ['1) "4"', '2) "5"'],
+          'failed to get range with 2 negative indexes')
+    checklines(c, 1, 'lrange a 0 9',
+          ['ERR index out of range or not integer'],
+          'got something from out of bound index')
+    checklines(c, 1, 'lrange a 0 -8',
+          ['ERR index out of range or not integer'],
+          'got something from out of bound index')
+    checklines(c, 1, 'lrange a 0 a',
+          ['ERR index out of range or not integer'],
+          'got something from not integer index')
+    # check args
+    check(c, 'lrange', 'ERR wrong number of arguments (given 0, expected 3)',
+          'failed to recognize syntax error')
+    check(c, 'lrange a', 'ERR wrong number of arguments (given 1, expected 3)',
+          'failed to recognize syntax error')
+    check(c, 'lrange a 1',
+          'ERR wrong number of arguments (given 2, expected 3)',
+          'failed to recognize syntax error')
+    check(c, 'lrange a 1 2 3',
+          'ERR wrong number of arguments (given 4, expected 3)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'hset c 1 2 3 4', '(integer) 2',
+          'failed to hset b 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'lrange b 1 2', 'ERR wrongtype operation',
+          'got something from key of wrong type (str)')
+    check(c, 'lrange c 1 2', 'ERR wrongtype operation',
+          'got something from key of wrong type (hash)')
+    check(c, 'lrange d 1 2', 'ERR wrongtype operation',
+          'got something from key of wrong type (set)')
+    cleanup(c)
+    print('\tlrange cmd test passed')
+

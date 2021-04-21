@@ -229,7 +229,7 @@ HtableAction htable_get(HashTable *htable, char *key) {
                 result.status = OK;
                 result.value = strdup(cur_item->value);
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -283,7 +283,7 @@ HtableAction htable_hset(HashTable *htable, char *key, char *field, char *value)
             if (cur_item->type == HASH) {
                 result = (HtableAction){OK, NULL};
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -294,7 +294,7 @@ HtableAction htable_hset(HashTable *htable, char *key, char *field, char *value)
 
     
     result = not_null ? result : (HtableAction){OK, NULL};
-    if (result.status == ERR) return result;
+    if (result.status == TYPERR) return result;
 
     if (not_null) {
         htable_set((HashTable *)cur_item->value, field, value);
@@ -321,7 +321,7 @@ HtableAction htable_hget(HashTable *htable, char *key, char *field) {
             if (cur_item->type == HASH) {
                 result = htable_get((HashTable *)cur_item->value, field);
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -358,7 +358,7 @@ HtableAction htable_hgetall(HashTable *htable, char *key) {
                 vals[ht->used * 2 + 1] = NULL; // for hvals
                 result = (HtableAction){OK, vals};
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -382,7 +382,7 @@ HtableAction htable_hdel(HashTable *htable, char *key, char *field) {
             if (cur_item->type == HASH) {
                 result = htable_del((HashTable *)cur_item->value, field);
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -459,7 +459,7 @@ HtableAction htable_push(HashTable *htable, char *key, char *value, int dir) {
             if (cur_item->type == LIST) {
                 result = (HtableAction){OK, NULL};
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -469,7 +469,7 @@ HtableAction htable_push(HashTable *htable, char *key, char *value, int dir) {
     }
 
     result = not_null ? result : (HtableAction){OK, NULL};
-    if (result.status == ERR) return result;
+    if (result.status == TYPERR) return result;
 
     if (not_null) {
         List *tmp = (List *)htable->items[hash]->value;
@@ -501,7 +501,7 @@ HtableAction htable_pop(HashTable *htable, char *key, int dir) {
                 result.value = strdup(popped->value);
                 list_node_free(popped);
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -519,6 +519,32 @@ HtableAction htable_pop(HashTable *htable, char *key, int dir) {
     return result;
 }
 
+HtableAction htable_hlen(HashTable *htable, char *key) {
+    HtableAction result;
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+
+    int i = 1, not_null = 0;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            if (cur_item->type == HASH) {
+                HashTable *tmp = (HashTable *)htable->items[hash]->value;
+                result.status = OK;
+                result.value = &tmp->used;
+            } else {
+                result = (HtableAction){TYPERR, NULL};
+            }
+            not_null++;
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+
+    result = not_null ? result : (HtableAction){NIL, NULL};
+    return result;
+}
+
 HtableAction htable_llen(HashTable *htable, char *key) {
     HtableAction result;
     int hash = hash_func(key, htable->size, 0);
@@ -532,7 +558,7 @@ HtableAction htable_llen(HashTable *htable, char *key) {
                 result.status = OK;
                 result.value = &tmp->len;
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -564,7 +590,43 @@ HtableAction htable_lindex(HashTable *htable, char *key, char *index) {
                     result = (HtableAction){NIL, NULL};
                 }
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
+            }
+            not_null++;
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+    
+    result = not_null ? result : (HtableAction){NIL, NULL};
+    return result;
+}
+
+HtableAction htable_lrange(HashTable *htable, char *key, char *start, char *stop)
+{
+    HtableAction result;
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+
+    int i = 1, not_null = 0;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            if (cur_item->type == LIST) {
+                List *tmp = (List *)cur_item->value;
+                int bgn = index_correcter(strtoi(start), tmp->len);
+                int end = index_correcter(strtoi(stop), tmp->len);
+                if (bgn <= end &&
+                    (bgn >= 0 && bgn < tmp->len) &&
+                    (end >= 0 && end < tmp->len))
+                {
+                    char **vals = list_range(tmp, bgn, end);
+                    result = (HtableAction){OK, vals};
+                } else {
+                    result = (HtableAction){IDERR, NULL};
+                }
+            } else {
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -589,7 +651,7 @@ HtableAction htable_sadd(HashTable *htable, char *key, char *value) {
             if (cur_item->type == TSET) {
                 result = (HtableAction){OK, NULL};
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -599,7 +661,7 @@ HtableAction htable_sadd(HashTable *htable, char *key, char *value) {
     }
 
     result = not_null ? result : (HtableAction){OK, NULL};
-    if (result.status == ERR) return result;
+    if (result.status == TYPERR) return result;
 
     if (not_null) {
         result = set_add((Set *)cur_item->value, value);
@@ -626,7 +688,7 @@ HtableAction htable_srem(HashTable *htable, char *key, char *value) {
             if (cur_item->type == TSET) {
                 result = set_rem((Set *)cur_item->value, value);
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -655,7 +717,7 @@ HtableAction htable_sismember(HashTable *htable, char *key, char *value) {
             if (cur_item->type == TSET) {
                 result = set_get((Set *)cur_item->value, value);
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;
@@ -688,7 +750,7 @@ HtableAction htable_smembers(HashTable *htable, char *key) {
                 vals[st->used] = NULL;
                 result = (HtableAction){OK, vals};
             } else {
-                result = (HtableAction){ERR, NULL};
+                result = (HtableAction){TYPERR, NULL};
             }
             not_null++;
             break;

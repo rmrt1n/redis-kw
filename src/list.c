@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
@@ -103,5 +104,23 @@ Node *list_index(List *list, int index) {
     Node *node = list->head;
     while (id++ < index && node != NULL) node = node->next;
     return node;
+}
+
+char **list_range(List *list, int start, int end) {
+    Node *node = list->head;
+    char **res = malloc((end - start + 2) * sizeof(char *));
+    int id = 0;
+    while (id < start) {
+        id++;
+        node = node->next;
+    }
+    char **p = res;
+    while (id <= end) {
+        *p++ = node->value;
+        id++;
+        node = node->next;
+    }
+    *p = NULL;
+    return res;
 }
 

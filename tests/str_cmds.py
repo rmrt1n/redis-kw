@@ -10,6 +10,7 @@ def test_str_cmds(c):
     test_decr(c)
     test_incrby(c)
     test_decrby(c)
+    test_strlen(c)
     print('all str cmds tests passed')
 
 def test_set(c):
@@ -318,3 +319,43 @@ def test_decrby(c):
     cleanup(c)
     print('\tdecrby cmd tests passed')
 
+def test_strlen(c):
+    # check gen
+    check(c, 'mset a hello b "hello world" c "" d 1', 'OK',
+          'failed to set multiple values')
+    check(c, 'strlen a', '(integer) 5',
+          'failed to get length of string "hello"')
+    check(c, 'strlen b', '(integer) 11',
+          'failed to get length of string "hello world"')
+    check(c, 'strlen c', '(integer) 0',
+          'failed to get length of empty string')
+    check(c, 'strlen d', '(integer) 1',
+          'failed to get length of string "1"')
+    check(c, 'del d', '(integer) 1',
+          'failed to delete key')
+    check(c, 'strlen d', '(integer) 0',
+          'got something from deleted key')
+    check(c, 'strlen e', '(integer) 0',
+          'got something from non existing key')
+    cleanup(c)
+    # check args
+    check(c, 'strlen', 'ERR wrong number of arguments (given 0, expected 1)',
+          'failed to recognize syntax error')
+    check(c, 'strlen a 1',
+          'ERR wrong number of arguments (given 2, expected 1)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'hset b 1 2', '(integer) 1',
+          'failed to hset a 1 to 2')
+    check(c, 'lpush c 1', '(integer) 1',
+          'failed to push to list')
+    check(c, 'sadd d 1', '(integer) 1',
+          'failed to add 1 to set')
+    check(c, 'strlen b', 'ERR wrongtype operation',
+          'got something from key of wrong type (hash)')
+    check(c, 'strlen c', 'ERR wrongtype operation',
+          'got something from key of wrong type (list)')
+    check(c, 'strlen d', 'ERR wrongtype operation',
+          'got something from key of wrong type (set)')
+    cleanup(c)
+    print('\tstrlen cmd tests passed')
