@@ -19,7 +19,7 @@ str cmds:        hash cmds:       list cmds:      set cmds:
 - [x] incr       - [x] hexists    - [x] llen      - [ ] scard  
 - [x] decr       - [x] hkeys      - [x] lindex    - [x] smismember
 - [x] incrby     - [x] hvals      - [ ] lpos      - [ ] sdiff
-- [x] decrby     - [x] hlen       - [ ] lset      - [ ] sinter
+- [x] decrby     - [x] hlen       - [x] lset      - [ ] sinter
 - [x] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
 - [ ] append     - [x] hmget      - [x] lrange    - [ ] sdiffstore
 - [ ] setrange   - [ ] hstrlen    - [ ] lpushx    - [ ] sinterstore
@@ -38,3 +38,4 @@ keys cmds:      etc:
 ```
 ### License
 [MIT](LICENSE)
+

@@ -8,6 +8,7 @@ def test_list_cmds(c):
     test_rpop(c)
     test_llen(c)
     test_lindex(c)
+    test_lset(c)
     print('all list tests passed')
 
 def test_lpush(c):
@@ -225,7 +226,7 @@ def test_lindex(c):
     cleanup(c)
     print('\tlindex cmd test passed')
 
-def test_lpush(c):
+def test_lrange(c):
     # check gen
     check(c, 'lpush a 5 4 3 2 1', '(integer) 5',
           'failed to init new list key')
@@ -273,4 +274,46 @@ def test_lpush(c):
           'got something from key of wrong type (set)')
     cleanup(c)
     print('\tlrange cmd test passed')
+
+def test_lset(c):
+    # check gen
+    check(c, 'lpush a 1 2 3 4 5', '(integer) 5',
+          'failed to init new list key')
+    check(c, 'lset a 0 hello', 'OK',
+          'failed to set 1 to hello')
+    check(c, 'lindex a 0', '"hello"',
+          'failed to set 1 to hello')
+    check(c, 'lset a -1 world', 'OK',
+          'failed to set with negative index')
+    check(c, 'lindex a -1', '"world"',
+          'failed to set with negative index')
+    check(c, 'lset a 2 "hi there"', 'OK',
+          'failed to set value of str with spaces')
+    check(c, 'lindex a 2', '"hi there"',
+          'failed to set value of str with spaces')
+    # check args
+    check(c, 'lset', 'ERR wrong number of arguments (given 0, expected 3)',
+          'failed to recognize syntax error')
+    check(c, 'lset a', 'ERR wrong number of arguments (given 1, expected 3)',
+          'failed to recognize syntax error')
+    check(c, 'lset a 1', 'ERR wrong number of arguments (given 2, expected 3)',
+          'failed to recognize syntax error')
+    check(c, 'lset a 1 2 3',
+          'ERR wrong number of arguments (given 4, expected 3)',
+          'failed to recognize syntax error')
+    # check type
+    check(c, 'set b hello', 'OK',
+          'failed to set b to hello')
+    check(c, 'hset c 1 2 3 4', '(integer) 2',
+          'failed to hset b 1 to 2, 3 to 4')
+    check(c, 'sadd d 1 2 3', '(integer) 3',
+          'failed to add to set d, 1 2 3')
+    check(c, 'lset b 0 hello', 'ERR wrongtype operation',
+          'set to key of wrong type (str)')
+    check(c, 'lset c 0 hello', 'ERR wrongtype operation',
+          'set to key of wrong type (hash)')
+    check(c, 'lset d 0 hello', 'ERR wrongtype operation',
+          'set to key of wrong type (set)')
+    cleanup(c)
+    print('\tlset cmd test passed')
 

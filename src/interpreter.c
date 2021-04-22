@@ -536,6 +536,16 @@ static void exec_lrange(int client, HashTable *htable, Command *cmd) {
     }
 }
 
+static void exec_lset(int client, HashTable *htable, Command *cmd) {
+    if (cmd->argc == 3) {
+        HtableAction res = htable_lset(htable, cmd->argv[0],
+                                       cmd->argv[1], cmd->argv[2]);
+        print_status(client, res);
+    } else {
+        print_wrong_argc(client, cmd->argc, "3");
+    }
+}
+
 static void exec_sadd(int client, HashTable *htable, Command *cmd) {
     if (cmd->argc > 1) {
         int oks = 0;
@@ -663,6 +673,7 @@ void execute(int client, HashTable *htable, char *msg) {
         case LLEN: exec_llen(client, htable, cmd); break;
         case LINDEX: exec_lindex(client, htable, cmd); break;
         case LRANGE: exec_lrange(client, htable, cmd); break;
+        case LSET: exec_lset(client, htable, cmd); break;
         case SADD: exec_sadd(client, htable, cmd); break;
         case SREM: exec_srem(client, htable, cmd); break;
         case SISMEMBER: exec_sismember(client, htable, cmd); break;

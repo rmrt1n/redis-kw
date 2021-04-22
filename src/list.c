@@ -106,6 +106,17 @@ Node *list_index(List *list, int index) {
     return node;
 }
 
+Node *list_set(List *list, int index, char *value) {
+    int id = 0;
+    Node *node = list->head;
+    while (id++ < index && node != NULL) node = node->next;
+    if (node != NULL) {
+        free_all(1, node->value);
+        node->value = strdup(value);
+    }
+    return node;
+}
+
 char **list_range(List *list, int start, int end) {
     Node *node = list->head;
     char **res = malloc((end - start + 2) * sizeof(char *));

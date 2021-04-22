@@ -639,6 +639,38 @@ HtableAction htable_lrange(HashTable *htable, char *key, char *start, char *stop
     return result;
 }
 
+HtableAction htable_lset(HashTable *htable, char *key, char *index, char *newval)
+{
+    HtableAction result;
+    int hash = hash_func(key, htable->size, 0);
+    Item *cur_item = htable->items[hash];
+
+    int i = 1, not_null = 0;
+    while (cur_item != NULL && cur_item != &HTABLE_DELETED) {
+        if (strcmp(cur_item->key, key) == 0) {
+            if (cur_item->type == LIST) {
+                List *tmp = (List *)cur_item->value;
+                int id = index_correcter(strtoi(index), tmp->len);
+                Node *node = list_set(tmp, id, newval);
+                if (node != NULL) {
+                    result = (HtableAction){OK, NULL};
+                } else {
+                    result = (HtableAction){IDERR, NULL};
+                }
+            } else {
+                result = (HtableAction){TYPERR, NULL};
+            }
+            not_null++;
+            break;
+        }
+        hash = hash_func(key, htable->size, i++);
+        cur_item = htable->items[hash];
+    }
+    
+    result = not_null ? result : (HtableAction){NIL, NULL};
+    return result;
+}
+
 HtableAction htable_sadd(HashTable *htable, char *key, char *value) {
     htable_resize_up(htable);
     HtableAction result;
