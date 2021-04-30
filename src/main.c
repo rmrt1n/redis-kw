@@ -1,19 +1,15 @@
 #include <stdio.h>
-#include <unistd.h>
 #include "common.h"
 
 int main() {
-    HashTable *htable = htable_init(HTABLE_BASE_SIZE);
-
-    // start server
-    int sockfd = init_server();
-    // accept connection
-    int client_sock = accept_connection(sockfd);
-    // server function
-    repl(client_sock, htable);
-    // close server
-    close_connection(sockfd);
-    
+    HashTable *ht = htable_init(5);
+    htable_set(ht, "a", "1");
+    htable_hset(ht, "b", "1", "2");
+    htable_push(ht, "c", "1", LEFT);
+    htable_sadd(ht, "d", "1");
+    for (int i = 0; i < ht->size; i++) {
+        HashTableItem *tmp = ht->items[i];
+        if (tmp != NULL) printf("key %s\n", tmp->key); 
+    }
     return 0;
 }
-

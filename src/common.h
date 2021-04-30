@@ -1,136 +1,64 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef HTABLE_H
+#define HTABLE_H
 
-#define PORT_NUM 6379
-#define SA struct sockaddr
-#define HTABLE_BASE_SIZE 2
+#include <stdbool.h>
 
-typedef struct Item {
-    enum {STR, HASH, LIST, TSET} type;
+#define HT_BASE_SIZE 2
+
+typedef struct HashTableItem {
+    enum {STR_T, HASH_T, LIST_T, SET_T} type;
     char *key;
     void *value;
-} Item;
+} HashTableItem;
 
 typedef struct HashTable {
     int size;
     int used;
-    int *keys;
-    Item **items;
+    HashTableItem **items;
 } HashTable;
 
-typedef struct HtableAction{
-    enum {OK, NIL, TYPERR, IDERR} status;
-    void *value;
-} HtableAction;
-
-typedef struct Node {
+typedef struct ListNode {
     char *value;
-    struct Node *next;
-    struct Node *prev;
-} Node;
+    struct ListNode *next;
+    struct ListNode *prev;
+} ListNode;
 
 typedef struct List {
     int len;
-    Node *head;
-    Node *tail;
+    ListNode *head;
+    ListNode *tail;
 } List;
 
-enum list_direction {LEFT, RIGHT};
+enum ListDirection {LEFT, RIGHT};
 
 typedef struct Set {
     int size;
     int used;
-    int *keys;
     char **members;
 } Set;
 
-typedef struct Parser {
-    char *string;
-    int pos;
-    char current_char;
-} Parser;
-
-typedef struct Command {
-    enum {
-        DEL, EXISTS, TYPE,
-        SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY, STRLEN,
-        HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET, HLEN,
-        LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX, LRANGE, LSET,
-        SADD, SREM, SISMEMBER, SMEMBERS, SMISMEMBER,
-        QUIT, UNKNOWN, NOOP
-    } type;
-    int argc;
-    char **argv;
-} Command;
-
-// common.c helper functions
-void free_all(int n, ...);
-int ndigits(int x);
-int isnumber(char *str);
-int strtoi(char *str);
-char *intostr(int n);
-int isprime(int n);
+// common.c
 int next_prime(int n);
-int index_correcter(int index, int llen);
-
-// server.c
-int init_server(void);
-int accept_connection(int sockfd);
-void close_connection(int sockfd);
-char *readline(int client_sock);
-void writeline(int client_sock, char *msg);
-void repl(int client_sock, HashTable *htable);
-
-// parser.c
-Parser *parser_init(char *msg);
-Command *parse(char *msg);
-
-// interpreter.c
-void execute(int client_sock, HashTable *htable, char *msg);
+int hash_func(char *key, int size, int i);
 
 // htable.c
-int hash_func(char *key, int size, int i);
 HashTable *htable_init(int size);
-void htable_free(HashTable *htable);
-void htable_resize_up(HashTable *htable);
-void htable_resize_down(HashTable *htable);
-HtableAction htable_set(HashTable *htable, char *key, char *value);
-HtableAction htable_get(HashTable *htable, char *key);
-HtableAction htable_del(HashTable *htable, char *key);
-HtableAction htable_exists(HashTable *htable, char *key);
-HtableAction htable_type(HashTable *htable, char *key);
-HtableAction htable_hset(HashTable *htable, char *key, char *field, char *value);
-HtableAction htable_hget(HashTable *htable, char *key, char *field);
-HtableAction htable_hgetall(HashTable *htable, char *key);
-HtableAction htable_hdel(HashTable *htable, char *key, char *field);
-HtableAction htable_hlen(HashTable *htable, char *key);
-HtableAction htable_push(HashTable *htable, char *key, char *value, int dir);
-HtableAction htable_pop(HashTable *htable, char *key, int dir);
-HtableAction htable_llen(HashTable *htable, char *key);
-HtableAction htable_lindex(HashTable *htable, char *key, char *index);
-HtableAction htable_lrange(HashTable *htable, char *key, char *start, char *stop);
-HtableAction htable_lset(HashTable *htable, char *key, char *index, char *newval);
-HtableAction htable_sadd(HashTable *htable, char *key, char *value);
-HtableAction htable_srem(HashTable *htable, char *key, char *value);
-HtableAction htable_sismember(HashTable *htable, char *key, char *value);
-HtableAction htable_smembers(HashTable *htable, char *key);
+void htable_free(HashTable *ht);
+void htable_set(HashTable *ht, char *key, char *value);
+void htable_hset(HashTable *ht, char *key, char *field, char *value);
+void htable_push(HashTable *ht, char *key, char *value, int dir);
+void htable_sadd(HashTable *ht, char *key, char *value);
 
 // list.c
-Node *list_node_init(char *value);
-List *list_init(void);
-void list_node_free(Node *node);
-void list_free(List *list);
-void list_push(List *list, char *value, int direction);
-Node *list_pop(List *list, int direction);
-Node *list_index(List *list, int index);
-char **list_range(List *list, int start, int end);
-Node *list_set(List *list, int index, char *value);
+List *list_init();
+void list_free(List *ls);
+void list_lpush(List *ls, char *value);
+void list_rpush(List *ls, char *value);
 
 // set.c
 Set *set_init(int size);
 void set_free(Set *set);
-HtableAction set_add(Set *set, char *value);
-HtableAction set_get(Set *set, char *value);
-HtableAction set_rem(Set *set, char *value);
+bool set_add(Set *set, char *value);
+
 
 #endif
