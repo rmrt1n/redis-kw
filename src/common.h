@@ -37,6 +37,25 @@ typedef struct Set {
     char **members;
 } Set;
 
+typedef struct Parser {
+    char *string;
+    int pos;
+    char current_char;
+} Parser;
+
+typedef struct Command {
+    enum {
+        DEL, EXISTS, TYPE,
+        SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY, STRLEN,
+        HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET, HLEN,
+        LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX, LRANGE, LSET,
+        SADD, SREM, SISMEMBER, SMEMBERS, SMISMEMBER,
+        QUIT, UNKNOWN, NOOP
+    } type;
+    int argc;
+    char **argv;
+} Command;
+
 // common.c
 int next_prime(int n);
 int hash_func(char *key, int size, int i);
@@ -87,5 +106,10 @@ bool set_add(Set *set, char *value);
 bool set_rem(Set *set, char *key);
 bool set_ismember(Set *set, char *key);
 
+// parser.c
+Parser *parser_init(char *msg);
+void parser_free(Parser *parser);
+Command *parse(char *msg);
+void command_free(Command *cmd);
 
 #endif
