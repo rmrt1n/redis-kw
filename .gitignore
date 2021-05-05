@@ -1,3 +1,4 @@
 *.out
 tests/__pycache__
 OLD
+rediskw*

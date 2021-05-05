@@ -28,7 +28,7 @@ static char *parse_string(Parser *parser) {
     // first quote
     char *token = calloc(1, sizeof(char));
     parser_advance(parser);
-    while ((parser->current_char != '"' || parser->current_char != '\'') &&
+    while ((parser->current_char != '"' && parser->current_char != '\'') &&
            parser->pos < strlen(parser->string)) {
         int n = strlen(token);
         token = realloc(token, n + 1);
@@ -60,6 +60,7 @@ static char *parse_id(Parser *parser) {
 
 static char *get_next_token(Parser *parser) {
     if (parser->pos < strlen(parser->string)) {
+        // skip whitespace
         if (isspace(parser->current_char)) {
             while (isspace(parser->current_char)) parser_advance(parser);
         }
@@ -67,41 +68,13 @@ static char *get_next_token(Parser *parser) {
         // handle if whitespace skips until terminating null byte
         if (parser->current_char == '\0') return NULL;
 
+        // parse string literals
         if (parser->current_char == '"' || parser->current_char == '\'') {
             return parse_string(parser);
-            // parser_advance(parser);
-            // while (parser->current_char != '"' &&
-                   // parser->pos < strlen(parser->string))
-            // {
-                    // char *temp = calloc(2, 1);
-                    // temp[0] = parser->current_char;
-
-                    // token = realloc(token, strlen(token) + 2);
-                    // strcat(token, temp);
-
-                    // free_all(1, temp);
-                    // parser_advance(parser);
-            // }
-            // parser_advance(parser);
-            // return token;
         }
 
-        if (isspace(parser->current_char) == 0) {
-            return parse_id(parser);
-            // while (isspace(parser->current_char) == 0 &&
-                   // parser->pos < strlen(parser->string))
-            // {
-                // char *temp = calloc(2, 1);
-                // temp[0] = parser->current_char;
-
-                // token = realloc(token, strlen(token) + 2);
-                // strcat(token, temp);
-
-                // free_all(1, temp);
-                // parser_advance(parser);
-            // }
-            // return token;
-        }
+        // parse identifiers
+        if (isspace(parser->current_char) == 0) return parse_id(parser);
     } 
 
     return NULL;

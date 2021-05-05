@@ -47,12 +47,16 @@ int accept_connection(int sfd) {
         exit(1);
     }
     return cfd;
-} 
+}
 
-// void close_connection(int sockfd) {
-    // puts("closing server");
-    // close(sockfd);
-// }
+void close_socket(int sockfd) {
+    close(sockfd);
+}
+
+void close_client(int cfd) {
+    shutdown(cfd, SHUT_RDWR);
+    close(cfd);
+}
 
 char *readline(int cfd) {
     char *msg = calloc(1024, 1);
@@ -65,17 +69,18 @@ void writeline(int cfd, char *msg) {
     char *tmp = malloc(strlen(msg) + 2);
     sprintf(tmp, "%s\n", msg);
     write(cfd, tmp, strlen(tmp) + 1);
-    free_all(1, tmp);
+    free(tmp);
 }
 
-void rediskw(int cfd, HashTable *ht) {
+int rediskw(int cfd, HashTable *ht) {
     while (1) {
-        // write(client, "> ", 3);
         char *msg = readline(cfd);
         Command *cmd = parse(msg);
         char *resp = interpret(cmd, ht);
-        write(cfd, resp, strlen(resp));
-        free_all(1, msg);
+        if (resp == NULL) return 1;
+        writeline(cfd, resp);
+        free(msg);
     }
+    return 0;
 }
 

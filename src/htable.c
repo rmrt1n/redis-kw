@@ -6,6 +6,8 @@
 
 HashTableItem HT_DELETED;
 
+static void htable_insert(HashTable *ht, int type, char *key, void *value);
+
 HashTable *htable_init(int size) {
     HashTable *ht = malloc(sizeof(HashTable));
     ht->size = next_prime(size);
@@ -47,7 +49,6 @@ void htable_free(HashTable *ht) {
     free(ht);
 }
 
-void htable_insert(HashTable *ht, int type, char *key, void *value);
 static void item_swap(HashTable *new_ht, HashTableItem *item) {
     htable_insert(new_ht, item->type, item->key, item->value);
     item->value = NULL;
@@ -85,7 +86,7 @@ static void htable_resize_down(HashTable *ht) {
     if (load < 10) htable_resize(ht, ht->size / 2);
 }
 
-void htable_insert(HashTable *ht, int type, char *key, void *value) {
+static void htable_insert(HashTable *ht, int type, char *key, void *value) {
     for (int i = 0; i < ht->size; i++) {
         int hash = hash_func(key, ht->size, i);
         HashTableItem *cur_item = ht->items[hash];
@@ -159,7 +160,7 @@ static void htable_update_str(HashTable *ht, char *key, void *value) {
     }
 }
 
-static void htable_update_hash(HashTable *ht, char *key,
+static bool htable_update_hash(HashTable *ht, char *key,
                                char *field, char *value) {
     for (int i = 0; i < ht->size; i++) {
         int hash = hash_func(key, ht->size, i);
@@ -167,10 +168,10 @@ static void htable_update_hash(HashTable *ht, char *key,
         if (cur_item == NULL) break;
         if (!is_deleted(cur_item) && strcmp(cur_item->key, key) == 0) {
             HashTable *tmp = (HashTable *)cur_item->value;
-            htable_set(tmp, field, value);
-            break;
+            return htable_set(tmp, field, value);
         }
     }
+    return false;
 }
 
 static void htable_update_list(HashTable *ht, char *key, char *value, int dir) {
@@ -199,24 +200,25 @@ static bool htable_update_set(HashTable *ht, char *key, char *value) {
     return false;
 }
 
-void htable_set(HashTable *ht, char *key, char *value) {
+bool htable_set(HashTable *ht, char *key, char *value) {
     // allocate mem for str constants
     char *dup = strdup(value);
     if (htable_exists(ht, key)) {
         htable_update_str(ht, key, dup);
-    } else {
-        htable_insert(ht, STR_T, key, dup);
+        return false;
     }
+    htable_insert(ht, STR_T, key, dup);
+    return true;
 }
 
-void htable_hset(HashTable *ht, char *key, char *field, char *value) {
+bool htable_hset(HashTable *ht, char *key, char *field, char *value) {
     if (htable_exists(ht, key)) {
-        htable_update_hash(ht, key, field, value);
-    } else {
-        HashTable *new_ht = htable_init(HT_BASE_SIZE);
-        htable_set(new_ht, field, value);
-        htable_insert(ht, HASH_T, key, new_ht);
+        return htable_update_hash(ht, key, field, value);
     }
+    HashTable *new_ht = htable_init(HT_BASE_SIZE);
+    htable_set(new_ht, field, value);
+    htable_insert(ht, HASH_T, key, new_ht);
+    return true;
 }
 
 void htable_push(HashTable *ht, char *key, char *value, int dir) {
@@ -232,12 +234,11 @@ void htable_push(HashTable *ht, char *key, char *value, int dir) {
 bool htable_sadd(HashTable *ht, char *key, char *value) {
     if (htable_exists(ht, key)) {
         return htable_update_set(ht, key, value);
-    } else {
-        Set *new_st = set_init(HT_BASE_SIZE);
-        set_add(new_st, value);
-        htable_insert(ht, SET_T, key, new_st);
-        return true;
     }
+    Set *new_st = set_init(HT_BASE_SIZE);
+    set_add(new_st, value);
+    htable_insert(ht, SET_T, key, new_st);
+    return true;
 }
 
 static bool is_type(char *given, char *expected) {
@@ -245,24 +246,15 @@ static bool is_type(char *given, char *expected) {
 }
 
 char *htable_get(HashTable *ht, char *key) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "string")) {
-        free(type);
-        HashTableItem *res = htable_search(ht, key);
-        return res != NULL ? (char *)res->value : NULL;
-    }
-    return NULL;
+    HashTableItem *res = htable_search(ht, key);
+    return res != NULL ? (char *)res->value : NULL;
 }
 
 char *htable_hget(HashTable *ht, char *key, char *field) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "hash")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        HashTable *tmp_ht = (HashTable *)tmp->value;
-        return htable_get(tmp_ht, field);
-    }
-    return NULL;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return NULL;
+    HashTable *tmp_ht = (HashTable *)tmp->value;
+    return htable_get(tmp_ht, field);
 }
 
 char *htable_pop(HashTable *ht, char *key, int dir) {
@@ -334,14 +326,12 @@ bool htable_lset(HashTable *ht, char*key, int id, char *value) {
 }
 
 bool htable_hdel(HashTable *ht, char *key, char *field) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "hash")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        HashTable *tmp_ht = (HashTable *)tmp->value;
-        return htable_del(tmp_ht, field);
-    }
-    return false;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return false;
+    HashTable *tmp_ht = (HashTable *)tmp->value;
+    bool res = htable_del(tmp_ht, field);
+    if (tmp_ht->used == 0) htable_del(ht, key);
+    return res;
 }
 
 int htable_lrem(HashTable *ht, char *key, int count, char *value) {

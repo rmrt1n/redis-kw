@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 
+#define LOCALHOST "127.0.0.1"
+#define PORT_NUM 6379
+#define SA struct sockaddr
 #define HT_BASE_SIZE 2
 
 typedef struct HashTableItem {
@@ -56,17 +59,19 @@ typedef struct Command {
     char **argv;
 } Command;
 
-// common.c
+// helper.c
 int next_prime(int n);
 int hash_func(char *key, int size, int i);
+int ndigits(int x);
 
 // htable.c
 HashTable *htable_init(int size);
 void htable_free(HashTable *ht);
 bool htable_del(HashTable *ht, char *key);
 bool htable_exists(HashTable *ht, char *key);
-void htable_set(HashTable *ht, char *key, char *value);
-void htable_hset(HashTable *ht, char *key, char *field, char *value);
+char *htable_type(HashTable *ht, char *key);
+bool htable_set(HashTable *ht, char *key, char *value);
+bool htable_hset(HashTable *ht, char *key, char *field, char *value);
 void htable_push(HashTable *ht, char *key, char *value, int dir);
 bool htable_sadd(HashTable *ht, char *key, char *value);
 char *htable_get(HashTable *ht, char *key);
@@ -111,5 +116,21 @@ Parser *parser_init(char *msg);
 void parser_free(Parser *parser);
 Command *parse(char *msg);
 void command_free(Command *cmd);
+
+// interpreter.c
+char *interpret(Command *cmd, HashTable *ht);
+
+// server.c
+int init_server(void);
+int accept_connection(int sfd);
+void close_socket(int sockfd);
+void close_client(int cfd);
+int rediskw(int cfd, HashTable *ht);
+char *readline(int cfd);
+void writeline(int cfd, char *msg);
+
+// client.c
+int connect_server(char *addr, int port);
+void repl(int sfd);
 
 #endif
