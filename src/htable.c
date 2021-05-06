@@ -269,14 +269,10 @@ char *htable_pop(HashTable *ht, char *key, int dir) {
 }
 
 bool htable_sismember(HashTable *ht, char *key, char *value) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "set")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        Set *tmp_st = (Set *)tmp->value;
-        return set_ismember(tmp_st, value);
-    }
-    return false;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return false;
+    Set *tmp_st = (Set *)tmp->value;
+    return set_ismember(tmp_st, value);
 }
 
 int htable_hlen(HashTable *ht, char *key) {

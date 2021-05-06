@@ -42,6 +42,8 @@ void test_srem(HashTable *ht) {
         // test argc
         expect("empty srem", compare(ht, "srem",
                "-ERR wrong number of arguments (given 0, expected 2+)\r\n"));
+        expect("srem err argc", compare(ht, "srem a",
+               "-ERR wrong number of arguments (given 1, expected 2+)\r\n"));
         // test type
         expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
         expect("hset c", compare(ht, "hset c 1 2", ":1\r\n"));
@@ -56,7 +58,39 @@ void test_srem(HashTable *ht) {
     cleanup(ht);
 }
 
+void test_sismember(HashTable *ht) {
+    test_case("test sismember", {
+        // test gen
+        expect("sadd new set", compare(ht, "sadd a 1 2 3 4 5", ":5\r\n"));
+        expect("1 in a", compare(ht, "sismember a 1", ":1\r\n"));
+        expect("2 in a", compare(ht, "sismember a 2", ":1\r\n"));
+        expect("0 not in a", compare(ht, "sismember a 0", ":0\r\n"));
+        expect("check non existing key",
+               compare(ht, "sismember b 0", ":0\r\n"));
+        // test argc
+        expect("empty sismember", compare(ht, "sismember",
+               "-ERR wrong number of arguments (given 0, expected 2)\r\n"));
+        expect("sismember err argc", compare(ht, "sismember 1",
+               "-ERR wrong number of arguments (given 1, expected 2)\r\n"));
+        expect("sismember err argc", compare(ht, "sismember 1 2 3",
+               "-ERR wrong number of arguments (given 3, expected 2)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("hset c", compare(ht, "hset c 1 2", ":1\r\n"));
+        expect("lpush d", compare(ht, "lpush d 1", ":1\r\n"));
+        expect("sismember str", compare(ht, "sismember b 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("sismember hash", compare(ht, "sismember b 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("sismember list", compare(ht, "sismember d 1",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_set(HashTable *ht) {
     test_sadd(ht);
     test_srem(ht);
+    test_sismember(ht);
 }
+

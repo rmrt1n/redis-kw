@@ -285,6 +285,18 @@ char *exec_srem(HashTable *ht, Command *cmd) {
     return reply_err_argc(cmd->argc, "2+");
 }
 
+char *exec_sismember(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "set")) {
+            int x = htable_sismember(ht, cmd->argv[0], cmd->argv[1]);
+            return reply_integer(x);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2");
+}
+
 // char *exec_(HashTable *ht, Command *cmd) {
     // if (cmd->argc) {
         // char *type = htable_type(ht, cmd->argv[0]);
@@ -334,7 +346,7 @@ char *interpret(Command *cmd, HashTable *ht) {
         // case LSET: res = exec_lset(ht, cmd); break;
         case SADD: res = exec_sadd(ht, cmd); break;
         case SREM: res = exec_srem(ht, cmd); break;
-        // case SISMEMBER: res = exec_sismember(ht, cmd); break;
+        case SISMEMBER: res = exec_sismember(ht, cmd); break;
         // case SMEMBERS: res = exec_smembers(ht, cmd); break;
         // case SMISMEMBER: res = exec_smismember(ht, cmd); break;
         case UNKNOWN: res = exec_unknown(cmd); break;
