@@ -179,7 +179,7 @@ static void test_list_funcs() {
                strcmp(htable_pop(ht, "a", LEFT), "hello") == 0 &&
                htable_llen(ht, "a") == 1);
         expect("list rpop 3", strcmp(htable_pop(ht, "a", RIGHT), "3") == 0);
-        expect("items deleted list deleted", htable_exists(ht, "a"));
+        expect("items deleted list deleted", !htable_exists(ht, "a"));
         
         // lrem
         for (int i = 0; i < 5; i++) htable_push(ht, "a", "2", LEFT);

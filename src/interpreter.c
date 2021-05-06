@@ -75,6 +75,7 @@ char *exec_get(HashTable *ht, Command *cmd) {
     if (cmd->argc == 1) {
         char *type = htable_type(ht, cmd->argv[0]);
         if (is_type(type, "string")) {
+            free(type);
             char *res = htable_get(ht, cmd->argv[0]);
             return reply_string(res);
         }
@@ -87,6 +88,7 @@ char *exec_hset(HashTable *ht, Command *cmd) {
     if (cmd->argc >= 3 && cmd->argc % 2 == 1) {
         char *type = htable_type(ht, cmd->argv[0]);
         if (is_type(type, "hash")) {
+            free(type);
             int oks = 0;
             for (int i = 1; i < cmd->argc; i += 2) {
                 oks += htable_hset(ht, cmd->argv[0],
@@ -103,6 +105,7 @@ char *exec_hget(HashTable *ht, Command *cmd) {
     if (cmd->argc == 2) {
         char *type = htable_type(ht, cmd->argv[0]);
         if (is_type(type, "hash")) {
+            free(type);
             char *res = htable_hget(ht, cmd->argv[0], cmd->argv[1]);
             return reply_string(res);
         }
@@ -115,9 +118,70 @@ char *exec_hdel(HashTable *ht, Command *cmd) {
     if (cmd->argc >= 2) {
         char *type = htable_type(ht, cmd->argv[0]);
         if (is_type(type, "hash")) {
+            free(type);
             int oks = 0;
             for (int i = 1; i < cmd->argc; i++) {
                 oks += htable_hdel(ht, cmd->argv[0], cmd->argv[i]);
+            }
+            return reply_integer(oks);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2+");
+}
+
+char *exec_push(HashTable *ht, Command *cmd, int dir) {
+    if (cmd->argc >= 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "list")) {
+            free(type);
+            int len;
+            for (int i = 1; i < cmd->argc; i++) {
+                len = htable_push(ht, cmd->argv[0], cmd->argv[i], dir);
+            }
+            return reply_integer(len);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2+");
+}
+
+char *exec_pop(HashTable *ht, Command *cmd, int dir) {
+    if (cmd->argc == 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "list")) {
+            free(type);
+            char *res = htable_pop(ht, cmd->argv[0], dir);
+            return reply_string(res);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1");
+}
+
+char *exec_sadd(HashTable *ht, Command *cmd) {
+    if (cmd->argc >= 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "set")) {
+            free(type);
+            int oks = 0;
+            for (int i = 1; i < cmd->argc; i++) {
+                oks += htable_sadd(ht, cmd->argv[0], cmd->argv[i]);
+            }
+            return reply_integer(oks);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2+");
+}
+
+char *exec_srem(HashTable *ht, Command *cmd) {
+    if (cmd->argc >= 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "set")) {
+            int oks = 0;
+            for (int i = 1; i < cmd->argc; i++) {
+                oks += htable_srem(ht, cmd->argv[0], cmd->argv[i]);
             }
             return reply_integer(oks);
         }
@@ -165,16 +229,16 @@ char *interpret(Command *cmd, HashTable *ht) {
         // case HVALS: res = exec_hvals(ht, cmd); break;
         // case HMGET: res = exec_hmget(ht, cmd); break;
         // case HLEN: res = exec_hlen(ht, cmd); break;
-        // case LPUSH: res = exec_push(ht, cmd, LEFT); break;
-        // case LPOP: res = exec_pop(ht, cmd, LEFT); break;
-        // case RPUSH: res = exec_push(ht, cmd, RIGHT); break;
-        // case RPOP: res = exec_pop(ht, cmd, RIGHT); break;
+        case LPUSH: res = exec_push(ht, cmd, LEFT); break;
+        case LPOP: res = exec_pop(ht, cmd, LEFT); break;
+        case RPUSH: res = exec_push(ht, cmd, RIGHT); break;
+        case RPOP: res = exec_pop(ht, cmd, RIGHT); break;
         // case LLEN: res = exec_llen(ht, cmd); break;
         // case LINDEX: res = exec_lindex(ht, cmd); break;
         // case LRANGE: res = exec_lrange(ht, cmd); break;
         // case LSET: res = exec_lset(ht, cmd); break;
-        // case SADD: res = exec_sadd(ht, cmd); break;
-        // case SREM: res = exec_srem(ht, cmd); break;
+        case SADD: res = exec_sadd(ht, cmd); break;
+        case SREM: res = exec_srem(ht, cmd); break;
         // case SISMEMBER: res = exec_sismember(ht, cmd); break;
         // case SMEMBERS: res = exec_smembers(ht, cmd); break;
         // case SMISMEMBER: res = exec_smismember(ht, cmd); break;
@@ -183,6 +247,7 @@ char *interpret(Command *cmd, HashTable *ht) {
         case NOOP: res = strdup("");
         // default: break;
     }
+    // if (res) printf("result = %s\n", res);
     command_free(cmd);
     return res;
 }

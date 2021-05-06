@@ -174,7 +174,7 @@ static bool htable_update_hash(HashTable *ht, char *key,
     return false;
 }
 
-static void htable_update_list(HashTable *ht, char *key, char *value, int dir) {
+static int htable_update_list(HashTable *ht, char *key, char *value, int dir) {
     for (int i = 0; i < ht->size; i++) {
         int hash = hash_func(key, ht->size, i);
         HashTableItem *cur_item = ht->items[hash];
@@ -182,9 +182,10 @@ static void htable_update_list(HashTable *ht, char *key, char *value, int dir) {
         if (!is_deleted(cur_item) && strcmp(cur_item->key, key) == 0) {
             List *tmp = (List *)cur_item->value;
             dir == LEFT ? list_lpush(tmp, value) : list_rpush(tmp, value);
-            break;
+            return tmp->len;
         }
     }
+    return 0;
 }
 
 static bool htable_update_set(HashTable *ht, char *key, char *value) {
@@ -221,14 +222,14 @@ bool htable_hset(HashTable *ht, char *key, char *field, char *value) {
     return true;
 }
 
-void htable_push(HashTable *ht, char *key, char *value, int dir) {
+int htable_push(HashTable *ht, char *key, char *value, int dir) {
     if (htable_exists(ht, key)) {
-        htable_update_list(ht, key, value, dir);
-    } else {
-        List *new_ls = list_init();
-        dir == LEFT ? list_lpush(new_ls, value) : list_rpush(new_ls, value);
-        htable_insert(ht, LIST_T, key, new_ls);
+        return htable_update_list(ht, key, value, dir);
     }
+    List *new_ls = list_init();
+    dir == LEFT ? list_lpush(new_ls, value) : list_rpush(new_ls, value);
+    htable_insert(ht, LIST_T, key, new_ls);
+    return 1;
 }
 
 bool htable_sadd(HashTable *ht, char *key, char *value) {
@@ -258,15 +259,13 @@ char *htable_hget(HashTable *ht, char *key, char *field) {
 }
 
 char *htable_pop(HashTable *ht, char *key, int dir) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "list")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        List *tmp_ls = (List *)tmp->value;
-        ListNode *tmp_nd = dir == LEFT ? list_lpop(tmp_ls) : list_rpop(tmp_ls);
-        return tmp_nd->value;
-    }
-    return NULL;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return NULL;
+    List *tmp_ls = (List *)tmp->value;
+    ListNode *tmp_nd = dir == LEFT ? list_lpop(tmp_ls) : list_rpop(tmp_ls);
+    char *res = tmp_nd->value;
+    if (tmp_ls->len == 0) htable_del(ht, key);
+    return res;
 }
 
 bool htable_sismember(HashTable *ht, char *key, char *value) {
@@ -346,16 +345,12 @@ int htable_lrem(HashTable *ht, char *key, int count, char *value) {
 }
 
 bool htable_srem(HashTable *ht, char *key, char *value) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "set")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        Set *tmp_st = (Set *)tmp->value;
-        bool res = set_rem(tmp_st, value);
-        if (tmp_st->used == 0) htable_del(ht, key);
-        return res;
-    }
-    return false;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return false;
+    Set *tmp_st = (Set *)tmp->value;
+    bool res = set_rem(tmp_st, value);
+    if (tmp_st->used == 0) htable_del(ht, key);
+    return res;
 }
 
 int htable_lpos(HashTable *ht, char *key, char *value) {

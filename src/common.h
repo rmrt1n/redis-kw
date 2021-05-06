@@ -72,7 +72,7 @@ bool htable_exists(HashTable *ht, char *key);
 char *htable_type(HashTable *ht, char *key);
 bool htable_set(HashTable *ht, char *key, char *value);
 bool htable_hset(HashTable *ht, char *key, char *field, char *value);
-void htable_push(HashTable *ht, char *key, char *value, int dir);
+int htable_push(HashTable *ht, char *key, char *value, int dir);
 bool htable_sadd(HashTable *ht, char *key, char *value);
 char *htable_get(HashTable *ht, char *key);
 char *htable_hget(HashTable *ht, char *key, char *field);
