@@ -143,6 +143,7 @@ Command *parse(char *msg) {
         else if (strcmp(token, "smembers") == 0) type = SMEMBERS;
         else if (strcmp(token, "smismember") == 0) type = SMISMEMBER;
         else if (strcmp(token, "quit") == 0) type = QUIT;
+        else if (strcmp(token, "shutdown") == 0) type = SHUTDOWN;
         else type = UNKNOWN;
         
         // parse arguments

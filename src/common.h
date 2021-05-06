@@ -53,7 +53,7 @@ typedef struct Command {
         HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET, HLEN,
         LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX, LRANGE, LSET,
         SADD, SREM, SISMEMBER, SMEMBERS, SMISMEMBER,
-        QUIT, UNKNOWN, NOOP
+        QUIT, SHUTDOWN, UNKNOWN, NOOP
     } type;
     int argc;
     char **argv;

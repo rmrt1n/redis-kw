@@ -77,8 +77,11 @@ int rediskw(int cfd, HashTable *ht) {
         char *msg = readline(cfd);
         Command *cmd = parse(msg);
         char *resp = interpret(cmd, ht);
-        if (resp == NULL) return 1;
-        writeline(cfd, resp);
+        switch (*resp) {
+            case 'q': return 0;
+            case 'x': return 1;
+            default: writeline(cfd, resp);
+        }
         free(msg);
     }
     return 0;

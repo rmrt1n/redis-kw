@@ -1,0 +1,2 @@
+./rediskw &
+./rediskw-cli

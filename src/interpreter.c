@@ -316,7 +316,8 @@ char *interpret(Command *cmd, HashTable *ht) {
         // case SMEMBERS: res = exec_smembers(ht, cmd); break;
         // case SMISMEMBER: res = exec_smismember(ht, cmd); break;
         case UNKNOWN: res = exec_unknown(cmd); break;
-        case QUIT: res = NULL; break;
+        case QUIT: res = strdup("q"); break;
+        case SHUTDOWN: res = strdup("x"); break;
         case NOOP: res = strdup("");
         // default: break;
     }
