@@ -14,14 +14,14 @@ cmds list:
 str cmds:        hash cmds:       list cmds:      set cmds:  
 - [x] set        - [x] hset       - [x] lpush     - [x] sadd 
 - [x] get        - [x] hget       - [x] rpush     - [x] srem 
-- [x] mset       - [x] hdel       - [x] lpop      - [x] smembers  
-- [x] mget       - [x] hgetall    - [x] rpop      - [x] sismember  
-- [x] incr       - [x] hexists    - [x] llen      - [ ] scard  
-- [x] decr       - [x] hkeys      - [x] lindex    - [x] smismember
-- [x] incrby     - [x] hvals      - [ ] lpos      - [ ] sdiff
-- [x] decrby     - [x] hlen       - [x] lset      - [ ] sinter
-- [x] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
-- [ ] append     - [x] hmget      - [x] lrange    - [ ] sdiffstore
+- [x] mset       - [x] hdel       - [x] lpop      - [ ] smembers  
+- [x] mget       - [x] hgetall    - [x] rpop      - [ ] sismember  
+- [ ] incr       - [ ] hexists    - [ ] llen      - [ ] scard  
+- [ ] decr       - [ ] hkeys      - [ ] lindex    - [ ] smismember
+- [ ] incrby     - [ ] hvals      - [ ] lpos      - [ ] sdiff
+- [ ] decrby     - [ ] hlen       - [x] lset      - [ ] sinter
+- [ ] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
+- [ ] append     - [ ] hmget      - [ ] lrange    - [ ] sdiffstore
 - [ ] setrange   - [ ] hstrlen    - [ ] lpushx    - [ ] sinterstore
 - [ ] getrange   - [ ] hsetnx     - [ ] rpushx    - [ ] sunionstore
 - [ ] setnx      - [ ]            - [ ] ltrim     - [ ]
@@ -30,10 +30,10 @@ str cmds:        hash cmds:       list cmds:      set cmds:
 
 
 keys cmds:      etc:
-- [x] del       - [x] ping
+- [x] del       - [ ] ping
 - [x] exists    - [x] quit
-- [x] type      - [ ] 
-- [ ] rename
+- [x] type      - [x] shutdown
+- [ ] rename    - [ ] 
 - [ ]
 ```
 ### License
