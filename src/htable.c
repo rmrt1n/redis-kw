@@ -365,24 +365,21 @@ int htable_lpos(HashTable *ht, char *key, char *value) {
 }
 
 char **htable_hgetall(HashTable *ht, char *key) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "hash")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        HashTable *tmp_ht = (HashTable *)tmp->value;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return NULL;
+    HashTable *tmp_ht = (HashTable *)tmp->value;
 
-        char **res = calloc((tmp_ht->used * 2 + 1), sizeof(char *));
-        int id = 0;
-        for (int i = 0; i < tmp_ht->size; i++) {
-            HashTableItem *cur_item = tmp_ht->items[i];
-            if (cur_item != NULL && !is_deleted(cur_item)) {
-                res[id++] = strdup(cur_item->key);
-                res[id++] = strdup(cur_item->value);
-            }
-            if (id == tmp_ht->used * 2) {
-                res[id] = NULL;
-                return res;
-            }
+    char **res = calloc((tmp_ht->used * 2 + 1), sizeof(char *));
+    int id = 0;
+    for (int i = 0; i < tmp_ht->size; i++) {
+        HashTableItem *cur_item = tmp_ht->items[i];
+        if (cur_item != NULL && !is_deleted(cur_item)) {
+            res[id++] = strdup(cur_item->key);
+            res[id++] = strdup(cur_item->value);
+        }
+        if (id == tmp_ht->used * 2) {
+            res[id] = NULL;
+            return res;
         }
     }
     return NULL;

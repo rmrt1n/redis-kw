@@ -85,9 +85,41 @@ static void test_hdel(HashTable *ht) {
     });
     cleanup(ht);
 }
+
+void test_hgetall(HashTable *ht) {
+    test_case("test hgetall", {
+        // test gen
+        expect("hset new hash", compare(ht, "hset a 1 2 3 4 5 6", ":3\r\n"));
+        // hgetall not ordered by insertion
+        expect("hgetall a", compare(ht, "hgetall a",
+               "*6\r\n:5\r\n:6\r\n:1\r\n:2\r\n:3\r\n:4\r\n"));
+        expect("change value in hash", compare(ht, "hset a 1 hello", ":0\r\n"));
+        expect("hgetall a", compare(ht, "hgetall a",
+               "*6\r\n:5\r\n:6\r\n:1\r\n$5\r\nhello\r\n:3\r\n:4\r\n"));
+        expect("hgetall b", compare(ht, "hgetall b", "*0\r\n"));
+        // test argc
+        expect("empty hgetall", compare(ht, "hgetall",
+               "-ERR wrong number of arguments (given 0, expected 1)\r\n"));
+        expect("hgetall err argc", compare(ht, "hgetall 1 2",
+               "-ERR wrong number of arguments (given 2, expected 1)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("lpush c", compare(ht, "lpush c 1", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("hgetall str", compare(ht, "hgetall b",
+               "-ERR wrongtype operation\r\n"));
+        expect("hgetall list", compare(ht, "hgetall c",
+               "-ERR wrongtype operation\r\n"));
+        expect("hgetall set", compare(ht, "hgetall d",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_hash(HashTable *ht) {
     test_hset(ht);
     test_hget(ht);
     test_hdel(ht);
+    test_hgetall(ht);
 }
 

@@ -63,6 +63,8 @@ typedef struct Command {
 int next_prime(int n);
 int hash_func(char *key, int size, int i);
 int ndigits(int x);
+bool is_number(char *str);
+int strtoi(char *str);
 
 // htable.c
 HashTable *htable_init(int size);

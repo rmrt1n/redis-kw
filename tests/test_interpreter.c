@@ -34,7 +34,7 @@ void test_etc(HashTable *ht) {
 }
 
 void test_interpret() {
-    HashTable *ht = htable_init(HT_BASE_SIZE);
+    HashTable *ht = htable_init(512);
     test_interpret_key(ht);
     test_interpret_str(ht);
     test_interpret_hash(ht);

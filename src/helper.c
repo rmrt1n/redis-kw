@@ -1,3 +1,5 @@
+#include <string.h>
+#include <ctype.h>
 #include <math.h>
 #include "common.h"
 
@@ -45,6 +47,25 @@ int ndigits(int x) {
         n /= 10;
         res++;
     }
+    return res;
+}
+
+bool is_number(char *str) {
+    int n = strlen(str);
+    int i = *str == '-' ? 1 : 0;
+    for (; i < n; i++) {
+        if (!isdigit(str[i])) return false;
+    }
+    return true;
+}
+
+int strtoi(char *str) {
+    int res = 0, i = *str == '-' ? 1 : 0;
+    int neg = i, n = strlen(str);
+    for (; i < n; i++) {
+        res = res * 10 + (str[i] - '0');
+    }
+    if (neg) res *= -1;
     return res;
 }
 

@@ -17,6 +17,40 @@ static char *reply_integer(int x) {
     return res;
 }
 
+static char *reply_array_n(char **arr, int n) {
+    char *res = calloc(ndigits(n) + 3, sizeof(char));
+    sprintf(res, "*%d\r\n", n);
+    for (int i = 0; i < n; i++) {
+        char *tmp;
+        if (arr[i] == NULL)  {
+            tmp = reply_string(arr[i]);
+        } else {
+            tmp = is_number(arr[i])
+                ? reply_integer(strtoi(arr[i]))
+                : reply_string(arr[i]);
+        }
+        strncat(res, tmp, strlen(tmp));
+    }
+    return res;
+}
+
+static char *reply_array(char **arr) {
+    if (arr == NULL) return strdup("*0\r\n");
+    int n = 0;
+    char *res = calloc(1, sizeof(char));
+    while (*arr != NULL) {
+        char *tmp = is_number(*arr)
+            ? reply_integer(strtoi(*arr))
+            : reply_string(*arr);
+        strncat(res, tmp, strlen(tmp));
+        arr++;
+        n++;
+    }
+    char *new_res = malloc(strlen(res) + ndigits(n) + 3);
+    sprintf(new_res, "*%d\r\n%s", n, res);
+    return new_res;
+}
+
 static char *reply_err_argc(int given, char *expected) {
     char *res = calloc(ndigits(given) + strlen(expected) + 52, sizeof(char));
     sprintf(res, "-ERR wrong number of arguments (given %d, expected %s)\r\n",
@@ -84,6 +118,33 @@ char *exec_get(HashTable *ht, Command *cmd) {
     return reply_err_argc(cmd->argc, "1");
 }
 
+char *exec_mset(HashTable *ht, Command *cmd) {
+    if (cmd->argc >= 2 && cmd->argc % 2 == 0) {
+        for (int i = 0; i < cmd->argc; i += 2) {
+            htable_set(ht, cmd->argv[i], cmd->argv[i+1]);
+        }
+        return reply_string("OK");
+    }
+    return reply_err_argc(cmd->argc, "2+");
+}
+
+char *exec_mget(HashTable *ht, Command *cmd) {
+    if (cmd->argc >= 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "string")) {
+            free(type);
+            char **res = calloc(cmd->argc, sizeof(char *));
+            for (int i = 0; i < cmd->argc; i++) {
+                char *tmp = htable_get(ht, cmd->argv[i]);
+                res[i] = tmp == NULL ? NULL : strdup(tmp);
+            }
+            return reply_array_n(res, cmd->argc);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1+");
+}
+
 char *exec_hset(HashTable *ht, Command *cmd) {
     if (cmd->argc >= 3 && cmd->argc % 2 == 1) {
         char *type = htable_type(ht, cmd->argv[0]);
@@ -128,6 +189,18 @@ char *exec_hdel(HashTable *ht, Command *cmd) {
         return reply_err_type();
     }
     return reply_err_argc(cmd->argc, "2+");
+}
+
+char *exec_hgetall(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "hash")) {
+            char **res = htable_hgetall(ht, cmd->argv[0]);
+            return reply_array(res);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1");
 }
 
 char *exec_push(HashTable *ht, Command *cmd, int dir) {
@@ -213,8 +286,8 @@ char *interpret(Command *cmd, HashTable *ht) {
         case TYPE: res = exec_type(ht, cmd); break;
         case SET: res = exec_set(ht, cmd); break;
         case GET: res = exec_get(ht, cmd); break;
-        // case MSET: res = exec_mset(ht, cmd); break;
-        // case MGET: res = exec_mget(ht, cmd); break;
+        case MSET: res = exec_mset(ht, cmd); break;
+        case MGET: res = exec_mget(ht, cmd); break;
         // case INCR: res = exec_incr(ht, cmd); break;
         // case DECR: res = exec_decr(ht, cmd); break;
         // case INCRBY: res = exec_incrby(ht, cmd); break;
@@ -223,7 +296,7 @@ char *interpret(Command *cmd, HashTable *ht) {
         case HSET: res = exec_hset(ht, cmd); break;
         case HGET: res = exec_hget(ht, cmd); break;
         case HDEL: res = exec_hdel(ht, cmd); break;
-        // case HGETALL: res = exec_hgetall(ht, cmd); break;
+        case HGETALL: res = exec_hgetall(ht, cmd); break;
         // case HEXISTS: res = exec_hexists(ht, cmd); break;
         // case HKEYS: res = exec_hkeys(ht, cmd); break;
         // case HVALS: res = exec_hvals(ht, cmd); break;
