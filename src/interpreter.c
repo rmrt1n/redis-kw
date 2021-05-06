@@ -203,6 +203,17 @@ char *exec_hgetall(HashTable *ht, Command *cmd) {
     return reply_err_argc(cmd->argc, "1");
 }
 
+char *exec_hlen(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "hash")) {
+            return reply_integer(htable_hlen(ht, cmd->argv[0]));
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1");
+}
+
 char *exec_push(HashTable *ht, Command *cmd, int dir) {
     if (cmd->argc >= 2) {
         char *type = htable_type(ht, cmd->argv[0]);
@@ -226,6 +237,17 @@ char *exec_pop(HashTable *ht, Command *cmd, int dir) {
             free(type);
             char *res = htable_pop(ht, cmd->argv[0], dir);
             return reply_string(res);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1");
+}
+
+char *exec_llen(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "list")) {
+            return reply_integer(htable_llen(ht, cmd->argv[0]));
         }
         return reply_err_type();
     }
@@ -301,12 +323,12 @@ char *interpret(Command *cmd, HashTable *ht) {
         // case HKEYS: res = exec_hkeys(ht, cmd); break;
         // case HVALS: res = exec_hvals(ht, cmd); break;
         // case HMGET: res = exec_hmget(ht, cmd); break;
-        // case HLEN: res = exec_hlen(ht, cmd); break;
+        case HLEN: res = exec_hlen(ht, cmd); break;
         case LPUSH: res = exec_push(ht, cmd, LEFT); break;
         case LPOP: res = exec_pop(ht, cmd, LEFT); break;
         case RPUSH: res = exec_push(ht, cmd, RIGHT); break;
         case RPOP: res = exec_pop(ht, cmd, RIGHT); break;
-        // case LLEN: res = exec_llen(ht, cmd); break;
+        case LLEN: res = exec_llen(ht, cmd); break;
         // case LINDEX: res = exec_lindex(ht, cmd); break;
         // case LRANGE: res = exec_lrange(ht, cmd); break;
         // case LSET: res = exec_lset(ht, cmd); break;
@@ -321,7 +343,6 @@ char *interpret(Command *cmd, HashTable *ht) {
         case NOOP: res = strdup("");
         // default: break;
     }
-    // if (res) printf("result = %s\n", res);
     command_free(cmd);
     return res;
 }

@@ -16,10 +16,10 @@ str cmds:        hash cmds:       list cmds:      set cmds:
 - [x] get        - [x] hget       - [x] rpush     - [x] srem 
 - [x] mset       - [x] hdel       - [x] lpop      - [ ] smembers  
 - [x] mget       - [x] hgetall    - [x] rpop      - [ ] sismember  
-- [ ] incr       - [ ] hexists    - [ ] llen      - [ ] scard  
+- [ ] incr       - [ ] hexists    - [x] llen      - [ ] scard  
 - [ ] decr       - [ ] hkeys      - [ ] lindex    - [ ] smismember
 - [ ] incrby     - [ ] hvals      - [ ] lpos      - [ ] sdiff
-- [ ] decrby     - [ ] hlen       - [x] lset      - [ ] sinter
+- [ ] decrby     - [x] hlen       - [x] lset      - [ ] sinter
 - [ ] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
 - [ ] append     - [ ] hmget      - [ ] lrange    - [ ] sdiffstore
 - [ ] setrange   - [ ] hstrlen    - [ ] lpushx    - [ ] sinterstore

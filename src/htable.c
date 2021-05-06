@@ -280,25 +280,17 @@ bool htable_sismember(HashTable *ht, char *key, char *value) {
 }
 
 int htable_hlen(HashTable *ht, char *key) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "hash")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        HashTable *tmp_ht = (HashTable *)tmp->value;
-        return tmp_ht != NULL ? tmp_ht->used : 0;
-    }
-    return -1;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return 0;
+    HashTable *tmp_ht = (HashTable *)tmp->value;
+    return tmp_ht != NULL ? tmp_ht->used : 0;
 }
 
 int htable_llen(HashTable *ht, char *key) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "list")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        List *tmp_ls = (List *)tmp->value;
-        return tmp_ls != NULL ? tmp_ls->len : 0;
-    }
-    return -1;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return 0;
+    List *tmp_ls = (List *)tmp->value;
+    return tmp_ls != NULL ? tmp_ls->len : 0;
 }
 
 char *htable_lindex(HashTable *ht, char *key, int id) {

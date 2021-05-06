@@ -58,8 +58,38 @@ static void test_pop(HashTable *ht) {
     cleanup(ht);
 }
 
+void test_llen(HashTable *ht) {
+    test_case("test llen", {
+        // test gen
+        expect("lpush new list", compare(ht, "lpush a 1 2 3", ":3\r\n"));
+        expect("llen a = 3", compare(ht, "llen a", ":3\r\n"));
+        expect("lpush a", compare(ht, "lpush a 1 2 3", ":6\r\n"));
+        expect("llen a = 3", compare(ht, "llen a", ":6\r\n"));
+        expect("lpop a", compare(ht, "lpop a", "$1\r\n3\r\n"));
+        expect("llen a = 3", compare(ht, "llen a", ":5\r\n"));
+        expect("llen non existing key", compare(ht, "llen b", ":0\r\n"));
+        // test argc
+        expect("empty llen", compare(ht, "llen",
+                "-ERR wrong number of arguments (given 0, expected 1)\r\n"));
+        expect("llen err argc", compare(ht, "llen 1 2",
+                "-ERR wrong number of arguments (given 2, expected 1)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("hset c 1 2", compare(ht, "hset c 1 2", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("llen str", compare(ht, "llen b",
+               "-ERR wrongtype operation\r\n"));
+        expect("llen hash", compare(ht, "llen b",
+               "-ERR wrongtype operation\r\n"));
+        expect("llen set", compare(ht, "llen d",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_list(HashTable *ht) {
     test_push(ht);
     test_pop(ht);
+    test_llen(ht);
 }
 

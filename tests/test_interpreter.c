@@ -29,7 +29,8 @@ void test_etc(HashTable *ht) {
         expect("unknown", compare(ht, "ks", "-ERR unrecognized command\r\n"));
         expect("unknown", compare(ht, "93", "-ERR unrecognized command\r\n"));
         expect("noop", compare(ht, "", ""));
-        expect("quit", compare(ht, "quit", NULL));
+        expect("quit", compare(ht, "quit", "q"));
+        expect("shutdown", compare(ht, "shutdown", "x"));
     });
 }
 
