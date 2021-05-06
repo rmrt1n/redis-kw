@@ -90,6 +90,8 @@ void test_mget(HashTable *ht) {
         expect("mget ex & nex", compare(ht, "mget a d", "*2\r\n:1\r\n$-1\r\n"));
         cleanup(ht);
         // test argc
+        expect("empty mget", compare(ht, "mget",
+               "-ERR wrong number of arguments (given 0, expected 1+)\r\n"));
         // test type
         expect("hset b", compare(ht, "hset b 1 2", ":1\r\n"));
         expect("lpush c", compare(ht, "lpush c 1", ":1\r\n"));
@@ -101,10 +103,40 @@ void test_mget(HashTable *ht) {
     cleanup(ht);
 }
 
+void test_strlen(HashTable *ht) {
+    test_case("test strlen", {
+        // test gen
+        expect("mset multiple vals",
+               compare(ht, "mset a 1 b hello c 'hello world'", "$2\r\nOK\r\n"));
+        expect("strlen a", compare(ht, "strlen a", ":1\r\n"));
+        expect("strlen b", compare(ht, "strlen b", ":5\r\n"));
+        expect("strlen c", compare(ht, "strlen c", ":11\r\n"));
+        expect("strlen non existing key", compare(ht, "strlen d", ":0\r\n"));
+        cleanup(ht);
+        // test argc
+        expect("empty strlen", compare(ht, "strlen",
+               "-ERR wrong number of arguments (given 0, expected 1)\r\n"));
+        expect("strlen err argc", compare(ht, "strlen 1 2",
+               "-ERR wrong number of arguments (given 2, expected 1)\r\n"));
+        // test type
+        expect("hset b", compare(ht, "hset b 1 2", ":1\r\n"));
+        expect("lpush c", compare(ht, "lpush c 1", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("strlen hash", compare(ht, "strlen b",
+               "-ERR wrongtype operation\r\n"));
+        expect("strlen list", compare(ht, "strlen c",
+               "-ERR wrongtype operation\r\n"));
+        expect("strlen set", compare(ht, "strlen d",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_str(HashTable *ht) {
     test_set(ht);
     test_get(ht);
     test_mset(ht);
     test_mget(ht);
+    test_strlen(ht);
 }
 
