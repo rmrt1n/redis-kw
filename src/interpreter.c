@@ -62,6 +62,10 @@ static char *reply_err_type() {
     return strdup("-ERR wrongtype operation\r\n");
 }
 
+static char *reply_err_intid() {
+    return strdup("-ERR value is not an integer or out of range\r\n");
+}
+
 static bool is_type(char *given, char *expected) {
     return strcmp(given, expected) == 0 || strcmp(given, "none") == 0;
 }
@@ -145,6 +149,96 @@ char *exec_mget(HashTable *ht, Command *cmd) {
     return reply_err_argc(cmd->argc, "1+");
 }
 
+char *exec_incr(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "string")) {
+            free(type);
+            char *res = htable_get(ht, cmd->argv[0]);
+            if (res == NULL) {
+                htable_set(ht, cmd->argv[0], "1");
+                return reply_integer(1);
+            }
+            if (is_number(res)) {
+                int tmp = strtoi(res) + 1;
+                htable_set(ht, cmd->argv[0], intostr(tmp));
+                return reply_integer(tmp);
+            }
+            return reply_err_intid();
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1");
+}
+
+char *exec_decr(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "string")) {
+            free(type);
+            char *res = htable_get(ht, cmd->argv[0]);
+            if (res == NULL) {
+                htable_set(ht, cmd->argv[0], "-1");
+                return reply_integer(-1);
+            }
+            if (is_number(res)) {
+                int tmp = strtoi(res) - 1;
+                htable_set(ht, cmd->argv[0], intostr(tmp));
+                return reply_integer(tmp);
+            }
+            return reply_err_intid();
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1");
+}
+
+char *exec_incrby(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "string")) {
+            free(type);
+            char *res = htable_get(ht, cmd->argv[0]);
+            if (res == NULL && is_number(cmd->argv[1])) {
+                int tmp = strtoi(cmd->argv[1]);
+                htable_set(ht, cmd->argv[0], intostr(tmp));
+                return reply_integer(tmp);
+            }
+            if (is_number(res) && is_number(cmd->argv[1])) {
+                int tmp = strtoi(res) + strtoi(cmd->argv[1]);
+                htable_set(ht, cmd->argv[0], intostr(tmp));
+                return reply_integer(tmp);
+            }
+            return reply_err_intid();
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2");
+}
+
+char *exec_decrby(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "string")) {
+            free(type);
+            char *res = htable_get(ht, cmd->argv[0]);
+            if (res == NULL && is_number(cmd->argv[1])) {
+                int tmp = strtoi(cmd->argv[1]);
+                htable_set(ht, cmd->argv[0], intostr(tmp));
+                return reply_integer(tmp);
+            }
+            if (is_number(res) && is_number(cmd->argv[1])) {
+                int tmp = strtoi(res) - strtoi(cmd->argv[1]);
+                htable_set(ht, cmd->argv[0], intostr(tmp));
+                return reply_integer(tmp);
+            }
+            return reply_err_intid();
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2");
+}
+
 char *exec_strlen(HashTable *ht, Command *cmd) {
     if (cmd->argc == 1) {
         char *type = htable_type(ht, cmd->argv[0]);
@@ -215,6 +309,19 @@ char *exec_hgetall(HashTable *ht, Command *cmd) {
         return reply_err_type();
     }
     return reply_err_argc(cmd->argc, "1");
+}
+
+char *exec_hexists(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "hash")) {
+            free(type);
+            char *res = htable_hget(ht, cmd->argv[0], cmd->argv[1]);
+            return reply_integer(res == NULL ? 0 : 1);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2");
 }
 
 char *exec_hlen(HashTable *ht, Command *cmd) {
@@ -315,6 +422,19 @@ char *exec_sismember(HashTable *ht, Command *cmd) {
     return reply_err_argc(cmd->argc, "2");
 }
 
+char *exec_smembers(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 1) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "set")) {
+            free(type);
+            char **res = htable_smembers(ht, cmd->argv[0]);
+            return reply_array(res);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "1");
+}
+
 // char *exec_(HashTable *ht, Command *cmd) {
     // if (cmd->argc) {
         // char *type = htable_type(ht, cmd->argv[0]);
@@ -340,16 +460,16 @@ char *interpret(Command *cmd, HashTable *ht) {
         case GET: res = exec_get(ht, cmd); break;
         case MSET: res = exec_mset(ht, cmd); break;
         case MGET: res = exec_mget(ht, cmd); break;
-        // case INCR: res = exec_incr(ht, cmd); break;
-        // case DECR: res = exec_decr(ht, cmd); break;
-        // case INCRBY: res = exec_incrby(ht, cmd); break;
-        // case DECRBY: res = exec_decrby(ht, cmd); break;
+        case INCR: res = exec_incr(ht, cmd); break;
+        case DECR: res = exec_decr(ht, cmd); break;
+        case INCRBY: res = exec_incrby(ht, cmd); break;
+        case DECRBY: res = exec_decrby(ht, cmd); break;
         case STRLEN: res = exec_strlen(ht, cmd); break;
         case HSET: res = exec_hset(ht, cmd); break;
         case HGET: res = exec_hget(ht, cmd); break;
         case HDEL: res = exec_hdel(ht, cmd); break;
         case HGETALL: res = exec_hgetall(ht, cmd); break;
-        // case HEXISTS: res = exec_hexists(ht, cmd); break;
+        case HEXISTS: res = exec_hexists(ht, cmd); break;
         // case HKEYS: res = exec_hkeys(ht, cmd); break;
         // case HVALS: res = exec_hvals(ht, cmd); break;
         // case HMGET: res = exec_hmget(ht, cmd); break;
@@ -365,7 +485,7 @@ char *interpret(Command *cmd, HashTable *ht) {
         case SADD: res = exec_sadd(ht, cmd); break;
         case SREM: res = exec_srem(ht, cmd); break;
         case SISMEMBER: res = exec_sismember(ht, cmd); break;
-        // case SMEMBERS: res = exec_smembers(ht, cmd); break;
+        case SMEMBERS: res = exec_smembers(ht, cmd); break;
         // case SMISMEMBER: res = exec_smismember(ht, cmd); break;
         case UNKNOWN: res = exec_unknown(cmd); break;
         case QUIT: res = strdup("q"); break;

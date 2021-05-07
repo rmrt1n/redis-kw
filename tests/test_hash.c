@@ -145,11 +145,41 @@ void test_hlen(HashTable *ht) {
     cleanup(ht);
 }
 
+void test_hexists(HashTable *ht) {
+    test_case("test hexists", {
+        // test gen
+        expect("hset new hash", compare(ht, "hset a 1 2 3 4 5 6", ":3\r\n"));
+        expect("hexists 1", compare(ht, "hexists a 1", ":1\r\n"));
+        expect("hexists 2", compare(ht, "hexists a 3", ":1\r\n"));
+        expect("hexists 0", compare(ht, "hexists a 0", ":0\r\n"));
+        expect("hexists non exists", compare(ht, "hexists b 0", ":0\r\n"));
+        // test argc
+        expect("empty hexists", compare(ht, "hexists",
+               "-ERR wrong number of arguments (given 0, expected 2)\r\n"));
+        expect("hexists a", compare(ht, "hexists a",
+               "-ERR wrong number of arguments (given 1, expected 2)\r\n"));
+        expect("hexists a 1 2", compare(ht, "hexists a 2 1",
+               "-ERR wrong number of arguments (given 3, expected 2)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("lpush c", compare(ht, "lpush c 1", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("hexists str", compare(ht, "hexists b 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("hexists list", compare(ht, "hexists c 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("hexists set", compare(ht, "hexists d 1",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_hash(HashTable *ht) {
     test_hset(ht);
     test_hget(ht);
     test_hdel(ht);
     test_hgetall(ht);
     test_hlen(ht);
+    test_hexists(ht);
 }
 

@@ -65,6 +65,7 @@ int hash_func(char *key, int size, int i);
 int ndigits(int x);
 bool is_number(char *str);
 int strtoi(char *str);
+char *intostr(int x);
 
 // htable.c
 HashTable *htable_init(int size);

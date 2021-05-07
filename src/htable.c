@@ -385,13 +385,9 @@ char **htable_lrange(HashTable *ht, char *key, int begin, int end) {
 }
 
 char **htable_smembers(HashTable *ht, char *key) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "set")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        Set *tmp_st = (Set *)tmp->value;
-        return set_members(tmp_st);
-    }
-    return NULL;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return NULL;
+    Set *tmp_st = (Set *)tmp->value;
+    return set_members(tmp_st);
 }
 

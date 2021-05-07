@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
@@ -66,6 +68,12 @@ int strtoi(char *str) {
         res = res * 10 + (str[i] - '0');
     }
     if (neg) res *= -1;
+    return res;
+}
+
+char *intostr(int x) {
+    char *res = malloc(ndigits(x) + 1);
+    sprintf(res, "%d", x);
     return res;
 }
 
