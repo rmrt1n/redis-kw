@@ -17,11 +17,11 @@ str cmds:        hash cmds:       list cmds:      set cmds:
 - [x] mset       - [x] hdel       - [x] lpop      - [x] smembers  
 - [x] mget       - [x] hgetall    - [x] rpop      - [x] sismember  
 - [x] incr       - [x] hexists    - [x] llen      - [ ] scard  
-- [x] decr       - [x] hkeys      - [x] lindex    - [ ] smismember
+- [x] decr       - [x] hkeys      - [x] lindex    - [x] smismember
 - [x] incrby     - [x] hvals      - [ ] lpos      - [ ] sdiff
 - [x] decrby     - [x] hlen       - [x] lset      - [ ] sinter
 - [x] strlen     - [ ] hincrby    - [x] lrem      - [ ] sunion
-- [ ] append     - [ ] hmget      - [ ] lrange    - [ ] sdiffstore
+- [ ] append     - [x] hmget      - [x] lrange    - [ ] sdiffstore
 - [ ] setrange   - [ ] hstrlen    - [ ] lpushx    - [ ] sinterstore
 - [ ] getrange   - [ ] hsetnx     - [ ] rpushx    - [ ] sunionstore
 - [ ] setnx      - [ ]            - [ ] ltrim     - [ ]
