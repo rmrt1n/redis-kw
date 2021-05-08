@@ -5,6 +5,7 @@
 
 static bool check_cmd(Command *cmd, int type, char *argv[]) {
     for (int i = 0; i < cmd->argc; i++) {
+        if (cmd->argv[i] != NULL) puts(cmd->argv[i]);
         if (strcmp(cmd->argv[i], argv[i]) != 0) return false;
     }
     return true;

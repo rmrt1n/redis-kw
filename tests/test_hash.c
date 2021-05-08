@@ -174,6 +174,95 @@ void test_hexists(HashTable *ht) {
     cleanup(ht);
 }
 
+void test_hkeys(HashTable *ht) {
+    test_case("test hkeys", {
+        // test gen
+        expect("hset new hash", compare(ht, "hset a 1 2 3 4 5 6", ":3\r\n"));
+        // keys not ordered by insertion
+        expect("hkeys a", compare(ht, "hkeys a", "*3\r\n:5\r\n:1\r\n:3\r\n"));
+        expect("hset new values", compare(ht, "hset a 7 8 9 0", ":2\r\n"));
+        expect("hkeys a", compare(ht, "hkeys a",
+               "*5\r\n:7\r\n:9\r\n:1\r\n:3\r\n:5\r\n"));
+        expect("hkeys non existing hash", compare(ht, "hkeys b", "*0\r\n"));
+        // test argc
+        expect("empty hkeys", compare(ht, "hkeys",
+               "-ERR wrong number of arguments (given 0, expected 1)\r\n"));
+        expect("hkeys err argc", compare(ht, "hkeys 1 2",
+               "-ERR wrong number of arguments (given 2, expected 1)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("lpush c", compare(ht, "lpush c 1", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("hkeys str", compare(ht, "hkeys b",
+               "-ERR wrongtype operation\r\n"));
+        expect("hkeys list", compare(ht, "hkeys c",
+               "-ERR wrongtype operation\r\n"));
+        expect("hkeys set", compare(ht, "hkeys d",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
+void test_hvals(HashTable *ht) {
+    test_case("test hvals", {
+        // test gen
+        expect("hset new hash", compare(ht, "hset a 1 2 3 4 5 6", ":3\r\n"));
+        // keys not ordered by insertion
+        expect("hvals a", compare(ht, "hvals a", "*3\r\n:6\r\n:2\r\n:4\r\n"));
+        expect("hset new values", compare(ht, "hset a 7 8 9 0", ":2\r\n"));
+        expect("hvals a", compare(ht, "hvals a",
+                "*5\r\n:8\r\n:0\r\n:2\r\n:4\r\n:6\r\n"));
+        expect("hvals non existing hash", compare(ht, "hvals b", "*0\r\n"));
+        // test argc
+        expect("empty hvals", compare(ht, "hvals",
+               "-ERR wrong number of arguments (given 0, expected 1)\r\n"));
+        expect("hvals err argc", compare(ht, "hvals 1 2",
+               "-ERR wrong number of arguments (given 2, expected 1)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("lpush c", compare(ht, "lpush c 1", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("hvals str", compare(ht, "hvals b",
+               "-ERR wrongtype operation\r\n"));
+        expect("hvals list", compare(ht, "hvals c",
+               "-ERR wrongtype operation\r\n"));
+        expect("hvals set", compare(ht, "hvals d",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
+void test_hmget(HashTable *ht) {
+    test_case("test hmget", {
+        // test gen
+        expect("hset new hash", compare(ht, "hset a 1 2 3 4 5 6", ":3\r\n"));
+        expect("hmget 1 val", compare(ht, "hmget a 1", "*1\r\n:2\r\n"));
+        expect("hmget multiple vals",
+               compare(ht, "hmget a 1 3 5", "*3\r\n:2\r\n:4\r\n:6\r\n"));
+        expect("hmget non existing val",
+               compare(ht, "hmget a 0", "*1\r\n$-1\r\n"));
+        expect("hmget ex & nex",
+               compare(ht, "hmget a 1 2 3", "*3\r\n:2\r\n$-1\r\n:4\r\n"));
+        expect("hmget non existing hash", compare(ht, "hmget b 1", "*0\r\n"));
+        // test argc
+        expect("empty hmget", compare(ht, "hmget",
+               "-ERR wrong number of arguments (given 0, expected 2+)\r\n"));
+        expect("hmget err argc", compare(ht, "hmget 1",
+               "-ERR wrong number of arguments (given 1, expected 2+)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("lpush c", compare(ht, "lpush c 1", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("hmget str", compare(ht, "hmget b 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("hmget list", compare(ht, "hmget c 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("hmget set", compare(ht, "hmget d 1",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_hash(HashTable *ht) {
     test_hset(ht);
     test_hget(ht);
@@ -181,5 +270,8 @@ void test_interpret_hash(HashTable *ht) {
     test_hgetall(ht);
     test_hlen(ht);
     test_hexists(ht);
+    test_hkeys(ht);
+    test_hvals(ht);
+    test_hmget(ht);
 }
 

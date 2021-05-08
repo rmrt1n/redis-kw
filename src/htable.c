@@ -289,27 +289,43 @@ int htable_llen(HashTable *ht, char *key) {
     return tmp_ls != NULL ? tmp_ls->len : 0;
 }
 
+// helper function to check if index is valid for a list
+// modifies id in interpreter.c
+int htable_check_id(HashTable *ht, char *key, int *id) {
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return -1;
+    List *tmp_ls = (List *)tmp->value;
+    *id = *id < 0 ? tmp_ls->len + *id : *id;
+    if (*id >= 0 && *id < tmp_ls->len) return 1;
+    return 0;
+}
+
+// helper function for lrange
+int htable_check_ids(HashTable *ht, char *key, int *begin, int *end) {
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return -1;
+    List *tmp_ls = (List *)tmp->value;
+    *begin = *begin < 0 ? tmp_ls->len + *begin : *begin;
+    *end = *end < 0 ? tmp_ls->len + *end : *end;
+    if ((*begin <= *end) &&
+        (*begin >= 0 && *begin < tmp_ls->len) &&
+        (*end >= 0 && *end < tmp_ls->len)) return 1;
+    return 0;
+}
+
 char *htable_lindex(HashTable *ht, char *key, int id) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "list")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        List *tmp_ls = (List *)tmp->value;
-        ListNode *tmp_nd = list_index(tmp_ls, id);
-        return tmp_nd != NULL ? tmp_nd->value : NULL;
-    }
-    return NULL;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return NULL;
+    List *tmp_ls = (List *)tmp->value;
+    ListNode *tmp_nd = list_index(tmp_ls, id);
+    return tmp_nd != NULL ? tmp_nd->value : NULL;
 }
 
 bool htable_lset(HashTable *ht, char*key, int id, char *value) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "list")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        List *tmp_ls = (List *)tmp->value;
-        return list_set(tmp_ls, id, value);
-    }
-    return NULL;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return false;
+    List *tmp_ls = (List *)tmp->value;
+    return list_set(tmp_ls, id, value);
 }
 
 bool htable_hdel(HashTable *ht, char *key, char *field) {
@@ -322,14 +338,10 @@ bool htable_hdel(HashTable *ht, char *key, char *field) {
 }
 
 int htable_lrem(HashTable *ht, char *key, int count, char *value) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "list")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        List *tmp_ls = (List *)tmp->value;
-        return list_rem(tmp_ls, count, value);
-    }
-    return -1;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return 0;
+    List *tmp_ls = (List *)tmp->value;
+    return list_rem(tmp_ls, count, value);
 }
 
 bool htable_srem(HashTable *ht, char *key, char *value) {
@@ -366,6 +378,26 @@ char **htable_hgetall(HashTable *ht, char *key) {
             res[id++] = strdup(cur_item->value);
         }
         if (id == tmp_ht->used * 2) {
+            res[id] = NULL;
+            return res;
+        }
+    }
+    return NULL;
+}
+
+char **htable_hkeyvals(HashTable *ht, char *key, int ky) {
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return NULL;
+    HashTable *tmp_ht = (HashTable *)tmp->value;
+
+    char **res = calloc(tmp_ht->used + 1, sizeof(char *));
+    int id = 0;
+    for (int i = 0; i < tmp_ht->size; i++) {
+        HashTableItem *cur_item = tmp_ht->items[i];
+        if (cur_item != NULL && !is_deleted(cur_item)) {
+            res[id++] = strdup(ky ? cur_item->key : cur_item->value);
+        }
+        if (id == tmp_ht->used) {
             res[id] = NULL;
             return res;
         }

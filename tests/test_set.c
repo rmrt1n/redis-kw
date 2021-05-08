@@ -117,10 +117,45 @@ void test_smembers(HashTable *ht) {
     cleanup(ht);
 }
 
+void test_smismember(HashTable *ht) {
+    test_case("test smismember", {
+        // test gen
+        expect("sadd new set", compare(ht, "sadd a 1 2 3 4 5", ":5\r\n"));
+        expect("smismember 1 value",
+               compare(ht, "smismember a 1", "*1\r\n:1\r\n"));
+        expect("smismember non existing member",
+               compare(ht, "smismember a 0", "*1\r\n:0\r\n"));
+        expect("smismember multiple values",
+               compare(ht, "smismember a 1 2 3", "*3\r\n:1\r\n:1\r\n:1\r\n"));
+        expect("smismember multiple ex & nex values",
+               compare(ht, "smismember a 1 2 3 0 9 4 1",
+                       "*7\r\n:1\r\n:1\r\n:1\r\n:0\r\n:0\r\n:1\r\n:1\r\n"));
+        expect("smismember non existing set",
+               compare(ht, "smismember b 1", "*0\r\n"));
+        // test argc
+        expect("empty smismember", compare(ht, "smismember",
+               "-ERR wrong number of arguments (given 0, expected 2+)\r\n"));
+        expect("smismember err argc", compare(ht, "smismember a",
+               "-ERR wrong number of arguments (given 1, expected 2+)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("hset c", compare(ht, "hset c 1 2", ":1\r\n"));
+        expect("lpush d", compare(ht, "lpush d 1", ":1\r\n"));
+        expect("smismember str", compare(ht, "smismember b 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("smismember hash", compare(ht, "smismember c 1",
+               "-ERR wrongtype operation\r\n"));
+        expect("smismember list", compare(ht, "smismember d 1",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_set(HashTable *ht) {
     test_sadd(ht);
     test_srem(ht);
     test_sismember(ht);
     test_smembers(ht);
+    test_smismember(ht);
 }
 

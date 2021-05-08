@@ -51,7 +51,7 @@ typedef struct Command {
         DEL, EXISTS, TYPE,
         SET, GET, MSET, MGET, INCR, DECR, INCRBY, DECRBY, STRLEN,
         HSET, HGET, HDEL, HGETALL, HEXISTS, HKEYS, HVALS, HMGET, HLEN,
-        LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX, LRANGE, LSET,
+        LPUSH, LPOP, RPUSH, RPOP, LLEN, LINDEX, LRANGE, LSET, LREM,
         SADD, SREM, SISMEMBER, SMEMBERS, SMISMEMBER,
         QUIT, SHUTDOWN, UNKNOWN, NOOP
     } type;
@@ -83,6 +83,8 @@ char *htable_pop(HashTable *ht, char *key, int dir);
 bool htable_sismember(HashTable *ht, char *key, char *value);
 int htable_hlen(HashTable *ht, char *key);
 int htable_llen(HashTable *ht, char *key);
+int htable_check_id(HashTable *ht, char *key, int *id);
+int htable_check_ids(HashTable *ht, char *key, int *begin, int *end);
 char *htable_lindex(HashTable *ht, char *key, int id);
 bool htable_lset(HashTable *ht, char*key, int id, char *value);
 bool htable_hdel(HashTable *ht, char *key, char *field);
@@ -90,6 +92,7 @@ int htable_lrem(HashTable *ht, char *key, int count, char *value);
 bool htable_srem(HashTable *ht, char *key, char *value);
 int htable_lpos(HashTable *ht, char *key, char *value);
 char **htable_hgetall(HashTable *ht, char *key);
+char **htable_hkeyvals(HashTable *ht, char *key, int ky);
 char **htable_lrange(HashTable *ht, char *key, int begin, int end);
 char **htable_smembers(HashTable *ht, char *key);
 char **set_members(Set *set);
