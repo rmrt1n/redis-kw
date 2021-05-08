@@ -20,7 +20,7 @@ str cmds:        hash cmds:       list cmds:      set cmds:
 - [x] decr       - [x] hkeys      - [x] lindex    - [ ] smismember
 - [x] incrby     - [x] hvals      - [ ] lpos      - [ ] sdiff
 - [x] decrby     - [x] hlen       - [x] lset      - [ ] sinter
-- [x] strlen     - [ ] hincrby    - [ ] lrem      - [ ] sunion
+- [x] strlen     - [ ] hincrby    - [x] lrem      - [ ] sunion
 - [ ] append     - [ ] hmget      - [ ] lrange    - [ ] sdiffstore
 - [ ] setrange   - [ ] hstrlen    - [ ] lpushx    - [ ] sinterstore
 - [ ] getrange   - [ ] hsetnx     - [ ] rpushx    - [ ] sunionstore
