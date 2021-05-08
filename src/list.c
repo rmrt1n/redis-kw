@@ -3,14 +3,14 @@
 #include "common.h"
 
 List *list_init() {
-    List *ls = malloc(sizeof(List));
+    List *ls = dmalloc(sizeof(List));
     ls->len = 0;
     ls->head = ls->tail = NULL;
     return ls;
 }
 
 static ListNode *node_init(char *value) {
-    ListNode *node = malloc(sizeof(ListNode));
+    ListNode *node = dmalloc(sizeof(ListNode));
     node->value = strdup(value);
     node->next = node->prev = NULL;
     return node;

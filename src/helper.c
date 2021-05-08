@@ -5,6 +5,25 @@
 #include <math.h>
 #include "common.h"
 
+void *dmalloc(size_t size) {
+    void *p = malloc(size);
+    if (p == NULL) {
+        fprintf(stderr, "couldn't allocate memory");
+        exit(1);
+    }
+    return p;
+}
+
+void *drealloc(void *p, size_t size) {
+    if (size == 0) return NULL; 
+    void *new_p = realloc(p, size);
+    if (new_p == NULL) {
+        fprintf(stderr, "couldn't allocate memory");
+        exit(1);
+    }
+    return new_p;
+}
+
 static int is_prime(int x) {
     if (x < 2) return 0;
     if (x == 2) return 1;
@@ -72,7 +91,7 @@ int strtoi(char *str) {
 }
 
 char *intostr(int x) {
-    char *res = malloc(ndigits(x) + 1);
+    char *res = dmalloc((ndigits(x) + 2) * sizeof(char));
     sprintf(res, "%d", x);
     return res;
 }

@@ -59,14 +59,14 @@ void close_client(int cfd) {
 }
 
 char *readline(int cfd) {
-    char *msg = calloc(1024, 1);
+    char *msg = dmalloc(1024 * sizeof(char));
     read(cfd, msg, 1024);
     msg[strlen(msg) - 1] = '\0';
     return msg;
 }
 
 void writeline(int cfd, char *msg) {
-    char *tmp = malloc(strlen(msg) + 2);
+    char *tmp = dmalloc((strlen(msg) + 2) * sizeof(char));
     sprintf(tmp, "%s\n", msg);
     write(cfd, tmp, strlen(tmp) + 1);
     free(tmp);

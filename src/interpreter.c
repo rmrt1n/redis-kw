@@ -6,53 +6,56 @@
 static char *reply_string(char *str) {
     if (str == NULL) return strdup("$-1\r\n");
     int n = strlen(str);
-    char *res = calloc(n + ndigits(n) + 5, sizeof(char));
+    char *res = dmalloc((n + ndigits(n) + 7) * sizeof(char));
     sprintf(res, "$%d\r\n%s\r\n", n, str);
     return res;
 }
 
 static char *reply_integer(int x) {
-    char *res = calloc(ndigits(x) + 3, sizeof(char));
+    char *res = dmalloc((ndigits(x) + 5) * sizeof(char));
     sprintf(res, ":%d\r\n", x);
     return res;
 }
 
 static char *reply_array_n(char **arr, int n) {
-    char *res = calloc(ndigits(n) + 3, sizeof(char));
+    char *res = dmalloc((ndigits(n) + 5) * sizeof(char));
     sprintf(res, "*%d\r\n", n);
     for (int i = 0; i < n; i++) {
         char *tmp;
         if (arr[i] == NULL)  {
-            tmp = reply_string(arr[i]);
+            tmp = reply_string(NULL);
         } else {
             tmp = is_number(arr[i])
                 ? reply_integer(strtoi(arr[i]))
                 : reply_string(arr[i]);
         }
-        strncat(res, tmp, strlen(tmp));
+        res = drealloc(res, (strlen(res) + strlen(tmp) + 1) * sizeof(char));
+        strncat(res, tmp, strlen(tmp) + 1);
     }
     return res;
 }
 
 static char *reply_array(char **arr) {
     if (arr == NULL) return strdup("*0\r\n");
+    char *res = dmalloc(sizeof(char));
+    *res = '\0';
     int n = 0;
-    char *res = calloc(1, sizeof(char));
     while (*arr != NULL) {
         char *tmp = is_number(*arr)
             ? reply_integer(strtoi(*arr))
             : reply_string(*arr);
-        strncat(res, tmp, strlen(tmp));
+        res = drealloc(res, (strlen(res) + strlen(tmp) + 1) * sizeof(char));
+        strncat(res, tmp, strlen(tmp) + 1);
         arr++;
         n++;
     }
-    char *new_res = malloc(strlen(res) + ndigits(n) + 3);
+    char *new_res = dmalloc((strlen(res) + ndigits(n) + 5) * sizeof(char));
     sprintf(new_res, "*%d\r\n%s", n, res);
     return new_res;
 }
 
 static char *reply_err_argc(int given, char *expected) {
-    char *res = calloc(ndigits(given) + strlen(expected) + 52, sizeof(char));
+    char *res = dmalloc((ndigits(given) + strlen(expected) + 54) * sizeof(char));
     sprintf(res, "-ERR wrong number of arguments (given %d, expected %s)\r\n",
             given, expected);
     return res;
@@ -137,7 +140,7 @@ char *exec_mget(HashTable *ht, Command *cmd) {
         char *type = htable_type(ht, cmd->argv[0]);
         if (is_type(type, "string")) {
             free(type);
-            char **res = calloc(cmd->argc, sizeof(char *));
+            char **res = dmalloc(cmd->argc * sizeof(char *));
             for (int i = 0; i < cmd->argc; i++) {
                 char *tmp = htable_get(ht, cmd->argv[i]);
                 res[i] = tmp == NULL ? NULL : strdup(tmp);
@@ -343,7 +346,7 @@ char *exec_hmget(HashTable *ht, Command *cmd) {
         if (is_type(type, "hash")) {
             free(type);
             if (!htable_exists(ht, cmd->argv[0])) return reply_array(NULL);
-            char **res = calloc(cmd->argc - 1, sizeof(char *));
+            char **res = dmalloc((cmd->argc - 1) * sizeof(char *));
             int id = 0;
             for (int i = 1; i < cmd->argc; i++) {
                 char *tmp = htable_hget(ht, cmd->argv[0], cmd->argv[i]);
@@ -552,7 +555,7 @@ char *exec_smismember(HashTable *ht, Command *cmd) {
         if (is_type(type, "set")) {
             free(type);
             if (!htable_exists(ht, cmd->argv[0])) return reply_array(NULL);
-            char **res = calloc(cmd->argc - 1, sizeof(char *));
+            char **res = dmalloc((cmd->argc - 1) * sizeof(char *));
             int id = 0;
             for (int i = 1; i < cmd->argc; i++) {
                 int x = htable_sismember(ht, cmd->argv[0], cmd->argv[i]);

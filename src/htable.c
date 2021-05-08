@@ -9,7 +9,7 @@ HashTableItem HT_DELETED;
 static void htable_insert(HashTable *ht, int type, char *key, void *value);
 
 HashTable *htable_init(int size) {
-    HashTable *ht = malloc(sizeof(HashTable));
+    HashTable *ht = dmalloc(sizeof(HashTable));
     ht->size = next_prime(size);
     ht->used = 0;
     ht->items = calloc(ht->size, sizeof(HashTableItem *));
@@ -17,7 +17,7 @@ HashTable *htable_init(int size) {
 }
 
 static HashTableItem *item_init(int type, char *key, void *value) {
-    HashTableItem *item = malloc(sizeof(HashTableItem));
+    HashTableItem *item = dmalloc(sizeof(HashTableItem));
     item->type = type;
     item->key = strdup(key);
     item->value = value;

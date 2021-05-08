@@ -227,7 +227,6 @@ void test_interpret_list(HashTable *ht) {
     test_lindex(ht);
     test_lrange(ht);
     test_lset(ht);
-    test_lset(ht);
-    // test_lrem(ht);
+    test_lrem(ht);
 }
 

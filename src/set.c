@@ -6,7 +6,7 @@
 char SET_DELETED;
 
 Set *set_init(int size) {
-    Set *set = malloc(sizeof(Set));
+    Set *set = dmalloc(sizeof(Set));
     set->size = next_prime(size);
     set->used = 0;
     set->members = calloc(set->size, sizeof(Set *));

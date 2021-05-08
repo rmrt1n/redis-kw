@@ -2,6 +2,7 @@
 #define HTABLE_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #define LOCALHOST "127.0.0.1"
 #define PORT_NUM 6379
@@ -60,6 +61,8 @@ typedef struct Command {
 } Command;
 
 // helper.c
+void *dmalloc(size_t size);
+void *drealloc(void *p, size_t size);
 int next_prime(int n);
 int hash_func(char *key, int size, int i);
 int ndigits(int x);

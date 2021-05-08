@@ -1,10 +1,11 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "common.h"
 
 static Command *command_init(int type, int argc, char **argv) {
-    Command *cmd = malloc(sizeof(Command));
+    Command *cmd = dmalloc(sizeof(Command));
     cmd->type = type;
     cmd->argc = argc;
     cmd->argv = argv;
@@ -24,38 +25,40 @@ static void parser_advance(Parser *parser) {
     }
 }
 
+static char *parse_id(Parser *parser) {
+    char *token = dmalloc(sizeof(char));
+    *token = '\0';
+    int n = 1;
+    while (!isspace(parser->current_char) &&
+            parser->pos < strlen(parser->string)) {
+        token = drealloc(token, ++n);
+        char *tmp = token;
+        sprintf(token, "%s%c", tmp, parser->current_char);
+        parser_advance(parser);
+    }
+    token = realloc(token, ++n);
+    token[n-1] = '\0';
+    return token;
+}
+
+
 static char *parse_string(Parser *parser) {
     // first quote
-    char *token = calloc(1, sizeof(char));
+    char *token = dmalloc(sizeof(char));
+    *token = '\0';
+    int n = 1;
     parser_advance(parser);
     while ((parser->current_char != '"' && parser->current_char != '\'') &&
            parser->pos < strlen(parser->string)) {
-        int n = strlen(token);
-        token = realloc(token, n + 1);
-        token[n] = parser->current_char;
+        token = drealloc(token, ++n);
+        char *tmp = token;
+        sprintf(token, "%s%c", tmp, parser->current_char);
         parser_advance(parser);
     }
     // last quote
     parser_advance(parser);
-    int n = strlen(token);
-    token = realloc(token, n + 1);
-    token[n] = '\0';
-    return token;
-}
-
-static char *parse_id(Parser *parser) {
-    char *token = calloc(1, sizeof(char));
-    while (!isspace(parser->current_char) &&
-            parser->pos < strlen(parser->string)) {
-        int n = strlen(token);
-        token = realloc(token, n + 1);
-        // token[n] = parser->current_char;
-        strncat(token, &parser->current_char, 1);
-        parser_advance(parser);
-    }
-    int n = strlen(token);
-    token = realloc(token, n + 1);
-    token[n] = '\0';
+    token = realloc(token, ++n);
+    token[n-1] = '\0';
     return token;
 }
 
@@ -90,7 +93,7 @@ static int get_argc(Parser *parser) {
 }
 
 Parser *parser_init(char *msg) {
-    Parser *parser = malloc(sizeof(parser));
+    Parser *parser = dmalloc(sizeof(Parser));
     parser->string = strdup(msg);
     parser->pos = 0;
     parser->current_char = msg[0];
@@ -149,10 +152,10 @@ Command *parse(char *msg) {
         else type = UNKNOWN;
         
         // parse arguments
-        char **args = malloc(argc * sizeof(char *));
+        char **args = dmalloc(argc * sizeof(char *));
         for (int i = 0; i < argc; i++) {
             token = get_next_token(parser);
-            args[i] = malloc(strlen(token) + 1);
+            args[i] = dmalloc((strlen(token) + 1) * sizeof(char));
             strcpy(args[i], token);
         }
         cmd = command_init(type, argc, args);
