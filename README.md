@@ -3,9 +3,11 @@ A redis clone written in C. This is my attempt at #42SkillsChallenge no. 9: In-m
 ## Building
 ```
 $ git clone https://github.com/rmrt1n/redis-kw.git && cd redis-kw
-$ make
-$ make test # for tests
-$ ./connect.sh # connect script for now
+$ make              # build server (rediskw)
+$ make client       # build client (rediskw-cli)
+$ make test         # run tests
+$ ./rediskw         # run server
+$ ./rediskw-cli     # connect to server using client
 ```
 ## Commands supported
 ```
