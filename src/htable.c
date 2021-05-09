@@ -341,7 +341,9 @@ int htable_lrem(HashTable *ht, char *key, int count, char *value) {
     HashTableItem *tmp = htable_search(ht, key);
     if (tmp == NULL) return 0;
     List *tmp_ls = (List *)tmp->value;
-    return list_rem(tmp_ls, count, value);
+    int res = list_rem(tmp_ls, count, value);
+    if (tmp_ls->len == 0) htable_del(ht, key);
+    return res;
 }
 
 bool htable_srem(HashTable *ht, char *key, char *value) {
@@ -354,14 +356,10 @@ bool htable_srem(HashTable *ht, char *key, char *value) {
 }
 
 int htable_lpos(HashTable *ht, char *key, char *value) {
-    char *type = htable_type(ht, key);
-    if (is_type(type, "list")) {
-        free(type);
-        HashTableItem *tmp = htable_search(ht, key);
-        List *tmp_ls = (List *)tmp->value;
-        return list_pos(tmp_ls, value);
-    }
-    return -1;
+    HashTableItem *tmp = htable_search(ht, key);
+    if (tmp == NULL) return -1;
+    List *tmp_ls = (List *)tmp->value;
+    return list_pos(tmp_ls, value);
 }
 
 char **htable_hgetall(HashTable *ht, char *key) {

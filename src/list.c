@@ -119,6 +119,10 @@ int list_pos(List *ls, char *value) {
 static void node_del(List *ls, ListNode *nd) {
     // ListNode *tmp = nd;
     if (ls->head == NULL || nd == NULL) return;
+    if (ls->len - 1 == 0) {
+        ls->head = ls->tail = NULL;
+        return;
+    }
     if (nd == ls->head) {
         ls->head = nd->next;
         ls->head->prev = NULL;

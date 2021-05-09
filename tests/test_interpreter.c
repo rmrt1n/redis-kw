@@ -14,6 +14,7 @@ bool compare(HashTable *ht, char *cmd, char *expected) {
     return strcmp(res, expected) == 0;
 }
 
+// template
 // void test_(HashTable *ht) {
     // test_case("test ", {
         // // test gen

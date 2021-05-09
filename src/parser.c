@@ -141,6 +141,7 @@ Command *parse(char *msg) {
         else if (strcmp(token, "lrange") == 0) type = LRANGE;
         else if (strcmp(token, "lset") == 0) type = LSET;
         else if (strcmp(token, "lrem") == 0) type = LREM;
+        else if (strcmp(token, "lpos") == 0) type = LPOS;
         else if (strcmp(token, "rpop") == 0) type = RPOP;
         else if (strcmp(token, "sadd") == 0) type = SADD;
         else if (strcmp(token, "srem") == 0) type = SREM;

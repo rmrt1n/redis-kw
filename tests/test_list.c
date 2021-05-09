@@ -205,7 +205,28 @@ void test_lset(HashTable *ht) {
 void test_lrem(HashTable *ht) {
     test_case("test lrem", {
         // test gen
+        expect("rpush new list",
+               compare(ht, "rpush a 1 1 2 2 2 2 2 1 1", ":9\r\n"));
+        expect("lrem first 3 1s", compare(ht, "lrem a 3 1", ":3\r\n"));
+        expect("lrange 0:-1 a", compare(ht, "lrange a 0 -1",
+               "*6\r\n:2\r\n:2\r\n:2\r\n:2\r\n:2\r\n:1\r\n"));
+        expect("lrem last 2 2s", compare(ht, "lrem a -2 2", ":2\r\n"));
+        expect("lrange 0:-1 a", compare(ht, "lrange a 0 -1",
+               "*4\r\n:2\r\n:2\r\n:2\r\n:1\r\n"));
+        expect("lrem last 2 1s", compare(ht, "lrem a 2 1", ":1\r\n"));
+        expect("lrange 0:-1 a", compare(ht, "lrange a 0 -1",
+               "*3\r\n:2\r\n:2\r\n:2\r\n"));
+        expect("lrem all 2s", compare(ht, "lrem a 0 2", ":3\r\n"));
+        expect("list deleted", compare(ht, "lrem a 0 1", ":0\r\n"));
         // test argc
+        expect("empty lrem", compare(ht, "lrem",
+                "-ERR wrong number of arguments (given 0, expected 3)\r\n"));
+        expect("lrem err argc", compare(ht, "lrem a",
+                "-ERR wrong number of arguments (given 1, expected 3)\r\n"));
+        expect("lrem err argc", compare(ht, "lrem 1 2",
+                "-ERR wrong number of arguments (given 2, expected 3)\r\n"));
+        expect("lrem err argc", compare(ht, "lrem 1 2 3 4",
+                "-ERR wrong number of arguments (given 4, expected 3)\r\n"));
         // test type
         expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
         expect("hset c 1 2", compare(ht, "hset c 1 2", ":1\r\n"));
@@ -220,6 +241,35 @@ void test_lrem(HashTable *ht) {
     cleanup(ht);
 }
 
+void test_lpos(HashTable *ht) {
+    test_case("test lpos", {
+        // test gen
+        expect("rpush new list", compare(ht, "rpush a 1 2 3 4 5", ":5\r\n"));
+        expect("lpos 1 = 0", compare(ht, "lpos a 1", ":0\r\n"));
+        expect("lpos 5 = 4", compare(ht, "lpos a 5", ":4\r\n"));
+        expect("lpos 8 = ??", compare(ht, "lpos a 8", "$-1\r\n"));
+        expect("lpos non existing list", compare(ht, "lpos b 5", "$-1\r\n"));
+        // test argc
+        expect("empty lpos", compare(ht, "lpos",
+                "-ERR wrong number of arguments (given 0, expected 2)\r\n"));
+        expect("lpos err argc", compare(ht, "lpos a",
+                "-ERR wrong number of arguments (given 1, expected 2)\r\n"));
+        expect("lpos err argc", compare(ht, "lpos a 1 2",
+                "-ERR wrong number of arguments (given 3, expected 2)\r\n"));
+        // test type
+        expect("set b", compare(ht, "set b 1", "$2\r\nOK\r\n"));
+        expect("hset c 1 2", compare(ht, "hset c 1 2", ":1\r\n"));
+        expect("sadd d", compare(ht, "sadd d 1", ":1\r\n"));
+        expect("lpos str", compare(ht, "lpos b 0",
+               "-ERR wrongtype operation\r\n"));
+        expect("lpos hash", compare(ht, "lpos c 0",
+               "-ERR wrongtype operation\r\n"));
+        expect("lpos set", compare(ht, "lpos d 0",
+               "-ERR wrongtype operation\r\n"));
+    });
+    cleanup(ht);
+}
+
 void test_interpret_list(HashTable *ht) {
     test_push(ht);
     test_pop(ht);
@@ -227,6 +277,7 @@ void test_interpret_list(HashTable *ht) {
     test_lindex(ht);
     test_lrange(ht);
     test_lset(ht);
+    test_lpos(ht);
     test_lrem(ht);
 }
 

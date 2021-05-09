@@ -481,7 +481,7 @@ char *exec_lrem(HashTable *ht, Command *cmd) {
             free(type);
             if (is_number(cmd->argv[1])) {
                 int count = strtoi(cmd->argv[1]);
-                int res = htable_lrem(ht, cmd->argv[0], count, cmd->argv[1]);
+                int res = htable_lrem(ht, cmd->argv[0], count, cmd->argv[2]);
                 return reply_integer(res);
             }
             return reply_err_intid();
@@ -489,6 +489,19 @@ char *exec_lrem(HashTable *ht, Command *cmd) {
         return reply_err_type();
     }
     return reply_err_argc(cmd->argc, "3");
+}
+
+char *exec_lpos(HashTable *ht, Command *cmd) {
+    if (cmd->argc == 2) {
+        char *type = htable_type(ht, cmd->argv[0]);
+        if (is_type(type, "list")) {
+            free(type);
+            int res = htable_lpos(ht, cmd->argv[0], cmd->argv[1]);
+            return res < 0 ? reply_string(NULL) : reply_integer(res);
+        }
+        return reply_err_type();
+    }
+    return reply_err_argc(cmd->argc, "2");
 }
 
 char *exec_sadd(HashTable *ht, Command *cmd) {
@@ -616,6 +629,7 @@ char *interpret(Command *cmd, HashTable *ht) {
         case LRANGE: res = exec_lrange(ht, cmd); break;
         case LSET: res = exec_lset(ht, cmd); break;
         case LREM: res = exec_lrem(ht, cmd); break;
+        case LPOS: res = exec_lpos(ht, cmd); break;
         case SADD: res = exec_sadd(ht, cmd); break;
         case SREM: res = exec_srem(ht, cmd); break;
         case SISMEMBER: res = exec_sismember(ht, cmd); break;
