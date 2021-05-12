@@ -4,11 +4,11 @@
 #include "miniunit.h"
 
 void cleanup(HashTable *ht) {
-    interpret(parse("del a b c d"), ht);
+    interpret(ht, parse("del a b c d"));
 }
 
 bool compare(HashTable *ht, char *cmd, char *expected) {
-    char *res = interpret(parse(cmd), ht);
+    char *res = interpret(ht, parse(cmd));
     // if (res != NULL) puts(res);
     if (expected == NULL) return res == NULL;
     return strcmp(res, expected) == 0;

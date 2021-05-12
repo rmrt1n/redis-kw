@@ -127,7 +127,7 @@ Command *parse(char *msg);
 void command_free(Command *cmd);
 
 // interpreter.c
-char *interpret(Command *cmd, HashTable *ht);
+char *interpret(HashTable *ht, Command *cmd);
 
 // server.c
 int init_server(void);

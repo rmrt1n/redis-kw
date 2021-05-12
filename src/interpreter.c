@@ -327,7 +327,7 @@ char *exec_hexists(HashTable *ht, Command *cmd) {
     return reply_err_argc(cmd->argc, "2");
 }
 
-char *exec_hkeyvals(HashTable *ht, Command *cmd, int key) {
+static char *exec_hkeyvals(HashTable *ht, Command *cmd, int key) {
     if (cmd->argc == 1) {
         char *type = htable_type(ht, cmd->argv[0]);
         if (is_type(type, "hash")) {
@@ -338,6 +338,14 @@ char *exec_hkeyvals(HashTable *ht, Command *cmd, int key) {
         return reply_err_type();
     }
     return reply_err_argc(cmd->argc, "1");
+}
+
+char *exec_hkeys(HashTable *ht, Command *cmd) {
+    return exec_hkeyvals(ht, cmd, 1);
+}
+
+char *exec_hvals(HashTable *ht, Command *cmd) {
+    return exec_hkeyvals(ht, cmd, 0);
 }
 
 char *exec_hmget(HashTable *ht, Command *cmd) {
@@ -371,7 +379,7 @@ char *exec_hlen(HashTable *ht, Command *cmd) {
     return reply_err_argc(cmd->argc, "1");
 }
 
-char *exec_push(HashTable *ht, Command *cmd, int dir) {
+static char *exec_push(HashTable *ht, Command *cmd, int dir) {
     if (cmd->argc >= 2) {
         char *type = htable_type(ht, cmd->argv[0]);
         if (is_type(type, "list")) {
@@ -387,6 +395,14 @@ char *exec_push(HashTable *ht, Command *cmd, int dir) {
     return reply_err_argc(cmd->argc, "2+");
 }
 
+char *exec_lpush(HashTable *ht, Command *cmd) {
+    return exec_push(ht, cmd, LEFT);
+}
+
+char *exec_rpush(HashTable *ht, Command *cmd) {
+    return exec_push(ht, cmd, RIGHT);
+}
+
 char *exec_pop(HashTable *ht, Command *cmd, int dir) {
     if (cmd->argc == 1) {
         char *type = htable_type(ht, cmd->argv[0]);
@@ -398,6 +414,14 @@ char *exec_pop(HashTable *ht, Command *cmd, int dir) {
         return reply_err_type();
     }
     return reply_err_argc(cmd->argc, "1");
+}
+
+char *exec_lpop(HashTable *ht, Command *cmd) {
+    return exec_pop(ht, cmd, LEFT);
+}
+
+char *exec_rpop(HashTable *ht, Command *cmd) {
+    return exec_pop(ht, cmd, RIGHT);
 }
 
 char *exec_llen(HashTable *ht, Command *cmd) {
@@ -592,54 +616,37 @@ char *exec_smismember(HashTable *ht, Command *cmd) {
     // return reply_err_argc(cmd->argc, "");
 // }
 
-char *exec_unknown(Command *cmd) {
+char *exec_unknown(HashTable *ht, Command *cmd) {
     return strdup("-ERR unrecognized command\r\n");
 }
 
-char *interpret(Command *cmd, HashTable *ht) {
+char *exec_quit(HashTable *ht, Command *cmd) {
+    return strdup("q");
+}
+
+char *exec_shutdown(HashTable *ht, Command *cmd) {
+    return strdup("x");
+}
+
+char *exec_noop(HashTable *ht, Command *cmd) {
+    return strdup("");
+}
+
+static char *(*fns[])(HashTable *, Command *) = {
+    &exec_del, &exec_exists, &exec_type,
+    &exec_set, &exec_get, &exec_mset, &exec_mget,
+    &exec_incr, &exec_decr, &exec_incrby, &exec_decrby, &exec_strlen,
+    &exec_hset, &exec_hget, &exec_hdel, &exec_hgetall,
+    &exec_hexists, &exec_hkeys, &exec_hvals, &exec_hmget, &exec_hlen,
+    &exec_lpush, &exec_lpop, &exec_rpush, &exec_rpop, &exec_llen,
+    &exec_lindex, &exec_lrange, &exec_lset, &exec_lrem, &exec_lpos,
+    &exec_sadd, &exec_srem, &exec_sismember, &exec_smembers,
+    &exec_smismember, &exec_quit, &exec_shutdown, &exec_unknown, &exec_noop
+};
+
+char *interpret(HashTable *ht, Command *cmd) {
     char *res;
-    switch (cmd->type) {
-        case DEL: res = exec_del(ht, cmd); break;
-        case EXISTS: res = exec_exists(ht, cmd); break;
-        case TYPE: res = exec_type(ht, cmd); break;
-        case SET: res = exec_set(ht, cmd); break;
-        case GET: res = exec_get(ht, cmd); break;
-        case MSET: res = exec_mset(ht, cmd); break;
-        case MGET: res = exec_mget(ht, cmd); break;
-        case INCR: res = exec_incr(ht, cmd); break;
-        case DECR: res = exec_decr(ht, cmd); break;
-        case INCRBY: res = exec_incrby(ht, cmd); break;
-        case DECRBY: res = exec_decrby(ht, cmd); break;
-        case STRLEN: res = exec_strlen(ht, cmd); break;
-        case HSET: res = exec_hset(ht, cmd); break;
-        case HGET: res = exec_hget(ht, cmd); break;
-        case HDEL: res = exec_hdel(ht, cmd); break;
-        case HGETALL: res = exec_hgetall(ht, cmd); break;
-        case HEXISTS: res = exec_hexists(ht, cmd); break;
-        case HKEYS: res = exec_hkeyvals(ht, cmd, 1); break;
-        case HVALS: res = exec_hkeyvals(ht, cmd, 0); break;
-        case HMGET: res = exec_hmget(ht, cmd); break;
-        case HLEN: res = exec_hlen(ht, cmd); break;
-        case LPUSH: res = exec_push(ht, cmd, LEFT); break;
-        case LPOP: res = exec_pop(ht, cmd, LEFT); break;
-        case RPUSH: res = exec_push(ht, cmd, RIGHT); break;
-        case RPOP: res = exec_pop(ht, cmd, RIGHT); break;
-        case LLEN: res = exec_llen(ht, cmd); break;
-        case LINDEX: res = exec_lindex(ht, cmd); break;
-        case LRANGE: res = exec_lrange(ht, cmd); break;
-        case LSET: res = exec_lset(ht, cmd); break;
-        case LREM: res = exec_lrem(ht, cmd); break;
-        case LPOS: res = exec_lpos(ht, cmd); break;
-        case SADD: res = exec_sadd(ht, cmd); break;
-        case SREM: res = exec_srem(ht, cmd); break;
-        case SISMEMBER: res = exec_sismember(ht, cmd); break;
-        case SMEMBERS: res = exec_smembers(ht, cmd); break;
-        case SMISMEMBER: res = exec_smismember(ht, cmd); break;
-        case UNKNOWN: res = exec_unknown(cmd); break;
-        case QUIT: res = strdup("q"); break;
-        case SHUTDOWN: res = strdup("x"); break;
-        case NOOP: res = strdup("");
-    }
+    res = fns[cmd->type](ht, cmd);
     command_free(cmd);
     return res;
 }

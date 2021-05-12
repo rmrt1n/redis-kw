@@ -76,7 +76,7 @@ int rediskw(int cfd, HashTable *ht) {
     while (1) {
         char *msg = readline(cfd);
         Command *cmd = parse(msg);
-        char *resp = interpret(cmd, ht);
+        char *resp = interpret(ht, cmd);
         switch (*resp) {
             case 'q': return 0;
             case 'x': return 1;
