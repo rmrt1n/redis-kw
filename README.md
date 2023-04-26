@@ -5,7 +5,7 @@ Database.
 
 ![Screeenshot of the client program](/screenshot.png)
 
-**Built with:**
+## Built with
 
 ![C](https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white)
 
@@ -73,6 +73,6 @@ keys cmds:      etc:
 - [ ]
 ```
 
-### License
+## License
 Distributed under the MIT License. See [LICENSE](/LICENSE) for more information.
 
